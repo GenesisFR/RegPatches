@@ -19,9 +19,23 @@ echo.
 
 rem Shortcuts for registry keys
 set _2K_BW="HKLM\Software\2K Games\Dungeon Siege 2 Broken World"
+set _GPG_BW_BASE="HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World"
 set _GPG_BW="HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000"
 set _MS_DS2="HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2"
 
+echo Please make a selection:
+echo.
+echo 1. Add registry entries for Dungeon Siege 2
+echo 2. Add registry entries for Dungeon Siege 2 Broken World
+echo 3. Remove registry entries for both games
+echo.
+choice /c 123 /N
+
+IF %ERRORLEVEL% == 1 goto DS2
+IF %ERRORLEVEL% == 2 goto DS2BW
+IF %ERRORLEVEL% == 3 goto cleanup
+
+:DS2
 echo Adding registry entries for Dungeon Siege 2...
 
 REG ADD %_MS_DS2% /v "AppPath" /t REG_SZ /d "%cd%" /f /reg:32 > nul
@@ -38,7 +52,9 @@ REG ADD %_MS_DS2% /v "VersionType" /t REG_SZ /d "RetailVersion" /f /reg:32 > nul
 
 echo DONE
 echo.
+goto end
 
+:DS2BW
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
 REG ADD %_2K_BW% /v "AppPath" /t REG_SZ /d "%cd%" /f /reg:32 > nul
@@ -67,6 +83,21 @@ REG ADD %_GPG_BW% /v "Version" /t REG_DWORD /d "0x01000000" /f /reg:32 > nul
 
 echo DONE
 echo.
+goto end
 
+:cleanup
+echo Removing registry entries for Dungeon Siege 2...
+REG DELETE %_MS_DS2% /f /reg:32 > nul
+echo DONE
+echo.
+
+echo Removing registry entries for Dungeon Siege 2: Broken World...
+REG DELETE %_2K_BW% /f /reg:32 > nul
+REG DELETE %_GPG_BW_BASE% /f /reg:32 > nul
+
+echo DONE
+echo.
+
+:end
 pause
 endlocal

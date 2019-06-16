@@ -41,7 +41,9 @@ echo.
 
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
+REG ADD %_2K_BW% /v "AppPath" /t REG_SZ /d "%cd%" /f /reg:32 > nul
 REG ADD %_2K_BW% /v "DistroID" /t REG_DWORD /d "0x0000047c" /f /reg:32 > nul
+REG ADD %_2K_BW% /v "InstallationDirectory" /t REG_SZ /d "%cd%" /f /reg:32 > nul
 REG ADD %_2K_BW% /v "InstalledGroup" /t REG_SZ /d "1" /f /reg:32 > nul
 REG ADD %_2K_BW% /v "PID" /t REG_SZ /d "0204-993D-D268-A1E2" /f /reg:32 > nul
 

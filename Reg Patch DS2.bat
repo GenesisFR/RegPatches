@@ -25,8 +25,8 @@ set _MS_DS2="HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2"
 
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for Dungeon Siege 2
-echo 2. Add registry entries for Dungeon Siege 2 Broken World
+echo 1. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
+echo 2. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW)
 echo 3. Remove registry entries for both games
 echo.
 choice /c 123 /N

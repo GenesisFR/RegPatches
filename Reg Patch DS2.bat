@@ -1,6 +1,29 @@
 @echo off
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.2)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.3)
+
+rem https://ss64.com/vb/syntax-elevate.html
+echo Checking if the script is run as admin...
+
+fsutil dirty query %SYSTEMDRIVE% > nul
+
+if %ERRORLEVEL%% == 0 (
+    echo OK
+) else (
+    echo ERROR: admin rights not detected.
+    echo.
+    echo The script will now restart as admin.
+
+    echo Set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
+    echo UAC.ShellExecute """%~s0""", "", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
+
+    "%TEMP%\ElevateMe.vbs"
+    del "%TEMP%\ElevateMe.vbs"
+    
+    exit /B
+)
+
+echo.
 
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct current directory when a script is run as admin
@@ -60,7 +83,6 @@ REG ADD %_MS_DS2% /v "Version" /t REG_SZ /d "2" /f /reg:32 > nul
 REG ADD %_MS_DS2% /v "VersionType" /t REG_SZ /d "RetailVersion" /f /reg:32 > nul
 
 echo DONE
-echo.
 goto end
 
 :DS2BW
@@ -91,7 +113,6 @@ REG ADD %_GPG_BW% /v "URLInfoAbout" /t REG_SZ /d "http://www.gaspowered.com" /f 
 REG ADD %_GPG_BW% /v "Version" /t REG_DWORD /d "0x01000000" /f /reg:32 > nul
 
 echo DONE
-echo.
 goto end
 
 :junction
@@ -102,14 +123,12 @@ for %%a in (.) do set _CURRENT_DIRECTORY=%%~nxa
 if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
 mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%CD%"
 
-echo DONE
-echo.
-
 IF %ERRORLEVEL% == 0 (
+    echo.
     echo You can now select the game's executable from "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" to add the game to GameRanger.
     echo.
-    echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory! If you no longer need it, you can safely delete it.
-    echo.
+    echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+    echo If can safely be renamed or deleted though.
 )
 
 goto end
@@ -125,8 +144,8 @@ REG DELETE %_2K_BW% /f /reg:32 > nul
 REG DELETE %_GPG_BW_BASE% /f /reg:32 > nul
 
 echo DONE
-echo.
 
 :end
+echo.
 pause
 endlocal

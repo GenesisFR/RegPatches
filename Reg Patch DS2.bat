@@ -130,7 +130,7 @@ IF %ERRORLEVEL% == 0 (
     echo You can now select the game's executable from "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" to add the game to GameRanger.
     echo.
     echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-    echo If can safely be renamed or deleted though.
+    echo It can safely be renamed or deleted.
 )
 
 goto end

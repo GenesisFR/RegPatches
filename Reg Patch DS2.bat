@@ -57,15 +57,17 @@ echo 1. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and th
 echo 2. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW)
 echo 3. Create a directory junction in Program Files (useful for GameRanger)
 echo 4. Remove registry entries for both games
+echo 5. Exit
 echo.
 echo Note: if you're not sure which option to select, just press 1.
 echo.
-choice /c 1234 /N
+choice /c 12345 /N
 
 IF %ERRORLEVEL% == 1 goto DS2
 IF %ERRORLEVEL% == 2 goto DS2BW
 IF %ERRORLEVEL% == 3 goto junction
 IF %ERRORLEVEL% == 4 goto cleanup
+IF %ERRORLEVEL% == 5 exit /B
 
 :DS2
 echo Adding registry entries for Dungeon Siege 2...

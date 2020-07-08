@@ -50,14 +50,13 @@ echo Your OS is %_OS_BITNESS%-bit.
 echo.
 
 rem Shortcuts for registry keys
-set _2K_BW="HKLM\Software\2K Games\Dungeon Siege 2 Broken World"
+set _2K_BW=HKLM\Software\2K Games\Dungeon Siege 2 Broken World
 set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\2K Games\Dungeon Siege 2 Broken World
-set _GPG_BW_BASE="HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World"
-set _GPG_BW="HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000"
+set _GPG_BW=HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World
 set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
-set _MS_DS2="HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2"
+set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
 set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege2
-set _REG_FILE="Reg_Patch_DS2.reg"
+set _REG_FILE=Reg_Patch_DS2.reg
 
 echo Please make a selection:
 echo.
@@ -82,8 +81,8 @@ IF %ERRORLEVEL% == 6 exit /B
 :DS2
 echo Adding registry entries for Dungeon Siege 2...
 
-REG ADD %_MS_DS2% /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD %_MS_DS2% /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
 
 echo DONE
 goto end
@@ -91,9 +90,9 @@ goto end
 :DS2BW
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
-REG ADD %_2K_BW% /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD %_2K_BW% /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD %_GPG_BW% /v "InstallLocation" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%CD%" /f /reg:32 > nul
 
 echo DONE
 goto end
@@ -128,7 +127,7 @@ echo "InstallationDirectory"="%_CD_DOUBLE_BACKSLASH%">> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo DONE
-
+echo.
 echo Exporting registry entries for Dungeon Siege 2: Broken World...
 
 echo [%_2K_BW_EXPORT%]>> %_REG_FILE%
@@ -142,19 +141,19 @@ echo.>> %_REG_FILE%
 
 echo DONE
 echo.
-echo A new file called %_REG_FILE% has been created in the current directory.
+echo A new file called "%_REG_FILE%" has been created in the current directory.
 
 goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege 2...
-REG DELETE %_MS_DS2% /f /reg:32 > nul
+REG DELETE "%_MS_DS2%" /f /reg:32 > nul
 echo DONE
 echo.
 
 echo Removing registry entries for Dungeon Siege 2: Broken World...
-REG DELETE %_2K_BW% /f /reg:32 > nul
-REG DELETE %_GPG_BW_BASE% /f /reg:32 > nul
+REG DELETE "%_2K_BW%" /f /reg:32 > nul
+REG DELETE "%_GPG_BW%" /f /reg:32 > nul
 
 echo DONE
 

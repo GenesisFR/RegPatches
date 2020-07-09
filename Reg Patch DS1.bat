@@ -140,7 +140,7 @@ REG DELETE "%_MS_DS%" /f /reg:32 > nul
 echo DONE
 echo.
 
-echo Removing registry entries for Dungeon Siege 1: Broken World...
+echo Removing registry entries for Dungeon Siege 1: Lands of Aranna...
 REG DELETE "%_MS_LOA%" /f /reg:32 > nul
 
 echo DONE

@@ -1,6 +1,6 @@
 @echo off
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.4)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.41)
 
 rem https://ss64.com/vb/syntax-elevate.html
 echo Checking if the script is run as admin...
@@ -56,6 +56,15 @@ set _GPG_BW=HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World
 set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
 set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
 set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege2
+set _REG_ARG=/reg:32
+
+if %_OS_BITNESS% == 32 (
+	set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
+	set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
+	set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
+	set _REG_ARG=
+)
+
 set _REG_FILE=Reg_Patch_DS2.reg
 
 echo Please make a selection:
@@ -81,8 +90,8 @@ IF %ERRORLEVEL% == 6 exit /B
 :DS2
 echo Adding registry entries for Dungeon Siege 2...
 
-REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -90,9 +99,9 @@ goto end
 :DS2BW
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
-REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f /reg:32 > nul
-REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -147,13 +156,13 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege 2...
-REG DELETE "%_MS_DS2%" /f /reg:32 > nul
+REG DELETE "%_MS_DS2%" /f %_REG_ARG% > nul
 echo DONE
 echo.
 
 echo Removing registry entries for Dungeon Siege 2: Broken World...
-REG DELETE "%_2K_BW%" /f /reg:32 > nul
-REG DELETE "%_GPG_BW%" /f /reg:32 > nul
+REG DELETE "%_2K_BW%" /f %_REG_ARG% > nul
+REG DELETE "%_GPG_BW%" /f %_REG_ARG% > nul
 
 echo DONE
 

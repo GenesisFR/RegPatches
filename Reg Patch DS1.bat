@@ -1,6 +1,6 @@
 @echo off
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.4)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.41)
 
 rem https://ss64.com/vb/syntax-elevate.html
 echo Checking if the script is run as admin...
@@ -54,8 +54,16 @@ set _MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege
 set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0
 set _MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna
 set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+set _REG_ARG=/reg:32
 set _REG_FILE=Reg_Patch_DS1.reg
 
+if %_OS_BITNESS% == 32 (
+	set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
+	set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+	set _REG_ARG=
+)
+
+rem Selection menu
 echo Please make a selection:
 echo.
 echo 1. Add registry entries for Dungeon Siege 1 (needed for LOA and the DS1 Tool Kit)
@@ -79,7 +87,7 @@ IF %ERRORLEVEL% == 6 exit /B
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
 
-REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -87,7 +95,7 @@ goto end
 :DS1LOA
 echo Adding registry entries for Dungeon Siege 1: Lands of Aranna...
 
-REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f /reg:32 > nul
+REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -136,12 +144,12 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege 1...
-REG DELETE "%_MS_DS%" /f /reg:32 > nul
+REG DELETE "%_MS_DS%" /f %_REG_ARG% > nul
 echo DONE
 echo.
 
 echo Removing registry entries for Dungeon Siege 1: Lands of Aranna...
-REG DELETE "%_MS_LOA%" /f /reg:32 > nul
+REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 
 echo DONE
 

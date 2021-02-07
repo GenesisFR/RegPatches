@@ -81,7 +81,7 @@ set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Gas Powered Games\Dun
 set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
 set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege2
 set _REG_ARG=/reg:32
-set _REG_FILE=Reg_Patch_DS2.reg
+set _REG_FILE=%~n0.reg
 
 if %_OS_BITNESS% == 32 (
     set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World

@@ -79,7 +79,7 @@ set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Ga
 set _MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna
 set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
 set _REG_ARG=/reg:32
-set _REG_FILE=Reg_Patch_DS1.reg
+set _REG_FILE=%~n0.reg
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (

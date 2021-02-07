@@ -1,10 +1,35 @@
 @echo off
+@setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.41)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.42)
+
+rem Checking and validating arguments
+if not "%1" == "" (
+    rem If one argument is specified, it must be "-c"
+    if "%1" == "-c" (
+        rem If the first argument is valid, a second argument must be specified
+        if not "%2" == "" (
+            rem It must be a digit between 1 and 5 to match the choices below
+            if "%2" GEQ "1" (
+                if "%2" LEQ "5" (
+                    set _CHOICE=%2
+                ) else (
+                    goto usage
+                )
+            ) else (
+                goto usage
+            )
+        ) else (
+            goto usage
+        )
+    ) else (
+        goto usage
+    )
+)
 
 rem https://ss64.com/vb/syntax-elevate.html
+rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
-
 fsutil dirty query %SYSTEMDRIVE% > nul
 
 if %ERRORLEVEL%% == 0 (
@@ -14,8 +39,8 @@ if %ERRORLEVEL%% == 0 (
     echo.
     echo The script will now restart as admin.
 
-    echo Set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
-    echo UAC.ShellExecute """%~f0""", "", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
+    echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
+    echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
 
     "%TEMP%\ElevateMe.vbs"
     del "%TEMP%\ElevateMe.vbs"
@@ -27,7 +52,6 @@ echo.
 
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct current directory when a script is run as admin
-@setlocal enableextensions
 @cd /d "%~dp0"
 
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
@@ -57,10 +81,11 @@ set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft G
 set _REG_ARG=/reg:32
 set _REG_FILE=Reg_Patch_DS1.reg
 
+rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-	set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
-	set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
-	set _REG_ARG=
+    set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
+    set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+    set _REG_ARG=
 )
 
 rem Selection menu
@@ -75,14 +100,20 @@ echo 6. Exit
 echo.
 echo Note: if you're not sure which option to select, just press 1.
 echo.
-choice /c 123456 /N
 
-IF %ERRORLEVEL% == 1 goto DS1
-IF %ERRORLEVEL% == 2 goto DS1LOA
-IF %ERRORLEVEL% == 3 goto junction
-IF %ERRORLEVEL% == 4 goto export
-IF %ERRORLEVEL% == 5 goto cleanup
-IF %ERRORLEVEL% == 6 exit /B
+rem Automatically make a selection in case of arguments
+if defined _CHOICE (
+    choice /C 123456 /N /T 0 /D %_CHOICE% 
+) else (
+    choice /C 123456 /N
+)
+
+if %ERRORLEVEL% == 1 goto DS1
+if %ERRORLEVEL% == 2 goto DS1LOA
+if %ERRORLEVEL% == 3 goto junction
+if %ERRORLEVEL% == 4 goto export
+if %ERRORLEVEL% == 5 goto cleanup
+if %ERRORLEVEL% == 6 exit /B
 
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
@@ -108,7 +139,7 @@ for %%a in (.) do set _CURRENT_DIRECTORY=%%~nxa
 if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
 mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%CD%"
 
-IF %ERRORLEVEL% == 0 (
+if %ERRORLEVEL% == 0 (
     echo.
     echo You can now select the game's executable from "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" to add the game to GameRanger.
     echo.
@@ -152,6 +183,12 @@ echo Removing registry entries for Dungeon Siege 1: Lands of Aranna...
 REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 
 echo DONE
+
+:usage
+echo Usage:
+echo.
+echo %~0 -c X (where X is a number between 1 and 5)
+goto end
 
 :end
 echo.

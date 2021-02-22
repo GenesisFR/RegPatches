@@ -91,14 +91,12 @@ if %_OS_BITNESS% == 32 (
 rem Selection menu
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for Dungeon Siege 1 (needed for LOA and the DS1 Tool Kit)
+echo 1. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
 echo 2. Add registry entries for Dungeon Siege 1 Lands of Aranna (needed for DSLOAMod)
 echo 3. Create a directory junction in Program Files (useful for GameRanger)
 echo 4. Export registry entries to a REG file (useful on Linux)
 echo 5. Remove registry entries for both games
 echo 6. Exit
-echo.
-echo Note: if you're not sure which option to select, just press 1.
 echo.
 
 rem Automatically make a selection in case of arguments

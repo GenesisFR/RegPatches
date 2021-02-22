@@ -152,6 +152,7 @@ IF %ERRORLEVEL% == 0 (
     echo It can safely be renamed or deleted.
 )
 
+echo DONE
 goto end
 
 :export
@@ -195,6 +196,7 @@ REG DELETE "%_2K_BW%" /f %_REG_ARG% > nul
 REG DELETE "%_GPG_BW%" /f %_REG_ARG% > nul
 
 echo DONE
+goto end
 
 :usage
 echo Usage:

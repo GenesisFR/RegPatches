@@ -145,6 +145,7 @@ if %ERRORLEVEL% == 0 (
     echo It can safely be renamed or deleted.
 )
 
+echo DONE
 goto end
 
 :export
@@ -181,6 +182,7 @@ echo Removing registry entries for Dungeon Siege 1: Lands of Aranna...
 REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 
 echo DONE
+goto end
 
 :usage
 echo Usage:

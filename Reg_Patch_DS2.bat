@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.42)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.43)
 
 rem Checking if run from Linux
 if defined WINEPREFIX goto init

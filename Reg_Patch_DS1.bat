@@ -1,7 +1,10 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.42)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.43)
+
+rem Checking if run from Linux
+if defined WINEPREFIX goto init
 
 rem Checking and validating arguments
 if not "%1" == "" (
@@ -50,6 +53,7 @@ if %ERRORLEVEL%% == 0 (
 
 echo.
 
+:init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct current directory when a script is run as admin
 @cd /d "%~dp0"
@@ -75,14 +79,20 @@ echo.
 
 rem Shortcuts for registry keys
 set _MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege
-set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0
+set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0
 set _MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna
-set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
 set _REG_ARG=/reg:32
 set _REG_FILE=%~n0.reg
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
+    set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
+    set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+    set _REG_ARG=
+)
+
+if defined WINEPREFIX (
     set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
     set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
     set _REG_ARG=
@@ -101,9 +111,9 @@ echo.
 
 rem Automatically make a selection in case of arguments
 if defined _CHOICE (
-    choice /C 123456 /N /T 0 /D %_CHOICE% 
+    choice /C:123456 /N /T 0 /D %_CHOICE% 
 ) else (
-    choice /C 123456 /N
+    choice /C:123456 /N
 )
 
 if %ERRORLEVEL% == 1 goto DS1

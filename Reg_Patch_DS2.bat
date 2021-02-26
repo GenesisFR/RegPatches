@@ -3,6 +3,9 @@
 
 title Reg Patcher for Dungeon Siege 2 by Genesis (v1.42)
 
+rem Checking if run from Linux
+if defined WINEPREFIX goto init
+
 rem Checking and validating arguments
 if not "%1" == "" (
     rem If one argument is specified, it must be "-c"
@@ -50,6 +53,7 @@ if %ERRORLEVEL%% == 0 (
 
 echo.
 
+:init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct current directory when a script is run as admin
 @cd /d "%~dp0"
@@ -75,15 +79,22 @@ echo.
 
 rem Shortcuts for registry keys
 set _2K_BW=HKLM\Software\2K Games\Dungeon Siege 2 Broken World
-set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\2K Games\Dungeon Siege 2 Broken World
+set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\2K Games\Dungeon Siege 2 Broken World
 set _GPG_BW=HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World
-set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
+set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
 set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
-set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Microsoft Games\DungeonSiege2
+set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege2
 set _REG_ARG=/reg:32
 set _REG_FILE=%~n0.reg
 
 if %_OS_BITNESS% == 32 (
+    set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
+    set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
+    set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
+    set _REG_ARG=
+)
+
+if defined WINEPREFIX (
     set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
     set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
     set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
@@ -105,9 +116,9 @@ echo.
 
 rem Automatically make a selection in case of arguments
 if defined _CHOICE (
-    choice /C 123456 /N /T 0 /D %_CHOICE% 
+    choice /C:123456 /N /T 0 /D %_CHOICE% 
 ) else (
-    choice /C 123456 /N
+    choice /C:123456 /N
 )
 
 if %ERRORLEVEL% == 1 goto DS2
@@ -144,7 +155,7 @@ for %%a in (.) do set _CURRENT_DIRECTORY=%%~nxa
 if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
 mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%CD%"
 
-IF %ERRORLEVEL% == 0 (
+if %ERRORLEVEL% == 0 (
     echo.
     echo You can now select the game's executable from "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" to add the game to GameRanger.
     echo.
@@ -152,7 +163,6 @@ IF %ERRORLEVEL% == 0 (
     echo It can safely be renamed or deleted.
 )
 
-echo DONE
 goto end
 
 :export

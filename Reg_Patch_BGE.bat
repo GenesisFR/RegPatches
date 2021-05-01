@@ -79,12 +79,7 @@ echo 3. Remove registry entries
 echo 4. Exit
 echo.
 
-rem Automatically make a selection in case of arguments
-if defined _CHOICE (
-    choice /C:1234 /N /T 0 /D %_CHOICE% 
-) else (
-    choice /C:1234 /N
-)
+choice /C:1234 /N
 
 if %ERRORLEVEL% == 1 goto BGE
 if %ERRORLEVEL% == 2 goto export
@@ -117,6 +112,7 @@ goto end
 
 :cleanup
 echo Removing registry entries for Beyond Good and Evil...
+
 REG DELETE "%_BGE%" /f %_REG_ARG% > nul
 
 echo DONE

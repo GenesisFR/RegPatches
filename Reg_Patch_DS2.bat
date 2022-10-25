@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.43)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.44)
 
 rem Checking if run from Linux
 if defined WINEPREFIX goto init
@@ -133,6 +133,7 @@ echo Adding registry entries for Dungeon Siege 2...
 
 REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_MS_DS2%" /v "PID" /t REG_SZ /d "77033-133-5335624-40332" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -142,6 +143,7 @@ echo Adding registry entries for Dungeon Siege 2: Broken World...
 
 REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_2K_BW%" /v "PID" /t REG_SZ /d "0204-993D-D268-A1E2" /f %_REG_ARG% > nul
 REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
 
 echo DONE

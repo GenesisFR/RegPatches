@@ -1,12 +1,13 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.43)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.44)
 
-rem Checking if run from Linux
+:linux_check
+rem Check if run from Linux
 if defined WINEPREFIX goto init
 
-rem Checking and validating arguments
+rem Check and validate arguments
 if not "%1" == "" (
     rem If one argument is specified, it must be "-c"
     if "%1" == "-c" (
@@ -30,6 +31,7 @@ if not "%1" == "" (
     )
 )
 
+:admin_check
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
@@ -55,15 +57,10 @@ echo.
 
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
-rem Correct current directory when a script is run as admin
+rem Correct the current directory when a script is run as admin
 @cd /d "%~dp0"
 
-rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
-rem Double backslashes in the current directory path
-set _CD_DOUBLE_BACKSLASH=%CD:\=\\%
-
 rem https://ss64.com/nt/syntax-64bit.html
-echo Detecting OS bitness...
 set _OS_BITNESS=64
 set _PROGRAM_FILES=%PROGRAMFILES(X86)%
 
@@ -74,10 +71,7 @@ if %PROCESSOR_ARCHITECTURE% == x86 (
     )
 )
 
-echo Your OS is %_OS_BITNESS%-bit.
-echo.
-
-rem Shortcuts for registry keys
+rem Shortcuts for registry stuff
 set _MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege
 set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0
 set _MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna
@@ -98,7 +92,54 @@ if defined WINEPREFIX (
     set _REG_ARG=
 )
 
+:exe_check
+rem Check for game executables in the current directory
+echo Checking for the game executable...
+
+if exist DungeonSiege.exe (
+    set _INSTALL_LOCATION=%CD%
+    echo OK
+    goto menu
+) else if exist DSLOA.exe (
+    set _INSTALL_LOCATION=%CD%
+    echo OK
+    goto menu
+) else (
+    echo DungeonSiege.exe and DSLOA.exe not found in the current directory!
+)
+
+:install_detection
+rem Check where the game installed from the registry
+echo.
+echo Searching for the game installation directory...
+
+for /F "tokens=2* delims=	 " %%A in (' REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200" /v InstallLocation 2^>nul') do set _INSTALL_LOCATION=%%B
+
+if "%_INSTALL_LOCATION%" == "" (
+    echo.
+    echo No game installation directory found!
+    goto end
+) else (
+    echo Game installation directory found: %_INSTALL_LOCATION%
+
+    rem Check for game executables in the installation directory
+    echo Checking for the game executable...
+
+    if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+        echo OK
+        goto menu
+    ) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+        echo OK
+        goto menu
+    ) else (
+        echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
+        goto end
+    )
+)
+
+:menu
 rem Selection menu
+echo.
 echo Please make a selection:
 echo.
 echo 1. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
@@ -126,7 +167,7 @@ if %ERRORLEVEL% == 6 exit /B
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
 
-REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -134,18 +175,18 @@ goto end
 :DS1LOA
 echo Adding registry entries for Dungeon Siege 1: Lands of Aranna...
 
-REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%CD%" /f %_REG_ARG% > nul
+REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
 
 :junction
 rem https://stackoverflow.com/a/8071683
-rem Get the current directory name
-for %%a in (.) do set _CURRENT_DIRECTORY=%%~nxa
+rem Get the install directory name
+for %%a in ("%_INSTALL_LOCATION%") do set _CURRENT_DIRECTORY=%%~nxa
 
 if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
-mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%CD%"
+mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%_INSTALL_LOCATION%"
 
 if %ERRORLEVEL% == 0 (
     echo.
@@ -159,13 +200,17 @@ echo DONE
 goto end
 
 :export
+rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
+rem Double backslashes in the install directory path
+set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
+
 echo REGEDIT4> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo Exporting registry entries for Dungeon Siege 1...
 
 echo [%_MS_DS_EXPORT%]>> %_REG_FILE%
-echo "EXE Path"="%_CD_DOUBLE_BACKSLASH%">> %_REG_FILE%
+echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo DONE
@@ -173,7 +218,7 @@ echo.
 echo Exporting registry entries for Dungeon Siege 1: Lands of Aranna...
 
 echo [%_MS_LOA_EXPORT%]>> %_REG_FILE%
-echo "EXE Path"="%_CD_DOUBLE_BACKSLASH%">> %_REG_FILE%
+echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo DONE

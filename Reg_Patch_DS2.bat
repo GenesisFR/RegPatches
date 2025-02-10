@@ -134,6 +134,7 @@ if "%_INSTALL_LOCATION%" == "" (
     )
 )
 
+:menu
 rem Selection menu
 echo Please make a selection:
 echo.

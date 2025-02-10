@@ -109,11 +109,11 @@ if exist DungeonSiege.exe (
 )
 
 :install_detection
-rem Check where the game installed from the registry
+rem Check where the game is installed from the registry
 echo.
 echo Searching for the game installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200" /v InstallLocation 2^>nul') do set _INSTALL_LOCATION=%%B
+for /F "tokens=2* delims=	 " %%A in (' REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190" /v InstallLocation 2^>nul') do set _INSTALL_LOCATION=%%B
 
 if "%_INSTALL_LOCATION%" == "" (
     echo.

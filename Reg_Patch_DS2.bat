@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.45)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.46)
 
 :linux_check
 rem Check if run from Linux
@@ -100,7 +100,7 @@ if defined WINEPREFIX (
 rem Check for the game executable in the current directory
 echo Checking for the game executable...
 
-if exist DungeonSiege2.exe (
+if exist %CD%\DungeonSiege2.exe (
     set _INSTALL_LOCATION=%CD%
     echo OK
     goto menu
@@ -258,3 +258,4 @@ goto end
 echo.
 pause
 endlocal
+

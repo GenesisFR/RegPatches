@@ -1,34 +1,27 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.45)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.46)
 
 :linux_check
 rem Check if run from Linux
 if defined WINEPREFIX goto init
 
+:argument_check
 rem Check and validate arguments
-if not "%1" == "" (
-    rem If one argument is specified, it must be "-c"
-    if "%1" == "-c" (
-        rem If the first argument is valid, a second argument must be specified
-        if not "%2" == "" (
-            rem It must be a digit between 1 and 5 to match the choices below
-            if "%2" GEQ "1" (
-                if "%2" LEQ "5" (
-                    set _CHOICE=%2
-                ) else (
-                    goto usage
-                )
-            ) else (
-                goto usage
-            )
-        ) else (
-            goto usage
-        )
-    ) else (
-        goto usage
-    )
+if "%1" == "-c" (
+	rem It must be a digit between 1 and 5 to match the choices below
+	if "%2" GEQ "1" (
+		if "%2" LEQ "5" (
+			set _CHOICE=%2
+		) else (
+			goto usage
+		)
+	) else (
+		goto usage
+	)
+) else if not "%1" == "" (
+	goto usage
 )
 
 :admin_check
@@ -150,7 +143,7 @@ echo 5. Remove registry entries for both games
 echo 6. Exit
 echo.
 
-rem Automatically make a selection in case of arguments
+rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
     choice /C:123456 /N /T 0 /D %_CHOICE% 
 ) else (
@@ -243,10 +236,8 @@ goto end
 echo Usage:
 echo.
 echo %~0 -c X (where X is a number between 1 and 5)
-goto end
 
 :end
 echo.
 pause
 endlocal
-

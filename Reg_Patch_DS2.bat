@@ -1,34 +1,27 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.46)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.47)
 
 :linux_check
 rem Check if run from Linux
 if defined WINEPREFIX goto init
 
-rem Check and validating arguments
-if not "%1" == "" (
-    rem If one argument is specified, it must be "-c"
-    if "%1" == "-c" (
-        rem If the first argument is valid, a second argument must be specified
-        if not "%2" == "" (
-            rem It must be a digit between 1 and 5 to match the choices below
-            if "%2" GEQ "1" (
-                if "%2" LEQ "5" (
-                    set _CHOICE=%2
-                ) else (
-                    goto usage
-                )
-            ) else (
-                goto usage
-            )
-        ) else (
-            goto usage
-        )
-    ) else (
-        goto usage
-    )
+:argument_check
+rem Check and validate arguments
+if "%1" == "-c" (
+	rem It must be a digit between 1 and 5 to match the choices below
+	if "%2" GEQ "1" (
+		if "%2" LEQ "5" (
+			set _CHOICE=%2
+		) else (
+			goto usage
+		)
+	) else (
+		goto usage
+	)
+) else if not "%1" == "" (
+	goto usage
 )
 
 :admin_check
@@ -139,7 +132,7 @@ rem Selection menu
 echo Please make a selection:
 echo.
 echo 1. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
-echo 2. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW)
+echo 2. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW and OpenSpy)
 echo 3. Create a directory junction in Program Files (useful for GameRanger)
 echo 4. Export registry entries to a REG file (useful on Linux)
 echo 5. Remove registry entries for both games
@@ -148,7 +141,7 @@ echo.
 echo Note: if you're not sure which option to select, just press 1.
 echo.
 
-rem Automatically make a selection in case of arguments
+rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
     choice /C:123456 /N /T 0 /D %_CHOICE% 
 ) else (
@@ -252,10 +245,8 @@ goto end
 echo Usage:
 echo.
 echo %~0 -c X (where X is a number between 1 and 5)
-goto end
 
 :end
 echo.
 pause
 endlocal
-

@@ -46,8 +46,6 @@ if %ERRORLEVEL%% == 0 (
     exit /B
 )
 
-echo.
-
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct current directory when a script is run as admin
@@ -82,6 +80,7 @@ if %_OS_BITNESS% == 32 (
     set _REG_ARG=
 )
 
+rem Or on Linux
 if defined WINEPREFIX (
     set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
     set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
@@ -91,6 +90,8 @@ if defined WINEPREFIX (
 
 :exe_check
 rem Check for the game executable in the current directory
+echo Current directory: %CD%
+echo.
 echo Checking for the game executable...
 
 if exist %CD%\DungeonSiege2.exe (
@@ -129,6 +130,7 @@ if "%_INSTALL_LOCATION%" == "" (
 
 :menu
 rem Selection menu
+echo.
 echo Please make a selection:
 echo.
 echo 1. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
@@ -147,6 +149,8 @@ if defined _CHOICE (
 ) else (
     choice /C:123456 /N
 )
+
+echo.
 
 if %ERRORLEVEL% == 1 goto DS2
 if %ERRORLEVEL% == 2 goto DS2BW
@@ -178,7 +182,7 @@ goto end
 
 :junction
 rem https://stackoverflow.com/a/8071683
-rem Get the current directory name
+rem Get the install directory name
 for %%a in ("%_INSTALL_LOCATION%") do set _CURRENT_DIRECTORY=%%~nxa
 
 if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
@@ -192,6 +196,7 @@ if %ERRORLEVEL% == 0 (
     echo It can safely be renamed or deleted.
 )
 
+echo DONE
 goto end
 
 :export

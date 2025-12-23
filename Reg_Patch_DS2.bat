@@ -164,7 +164,7 @@ echo Adding registry entries for Dungeon Siege 2...
 
 REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_MS_DS2%" /v "PID" /t REG_SZ /d "77033-133-5335624-40332" /f %_REG_ARG% > nul
+REG ADD "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG% > nul
 
 echo DONE
 goto end
@@ -174,7 +174,7 @@ echo Adding registry entries for Dungeon Siege 2: Broken World...
 
 REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_2K_BW%" /v "PID" /t REG_SZ /d "0204-993D-D268-A1E2" /f %_REG_ARG% > nul
+REG ADD "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG% > nul
 REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE

@@ -87,6 +87,8 @@ if defined WINEPREFIX (
 
 :exe_check
 rem Check for game executables in the current directory
+echo Current directory: %CD%
+echo.
 echo Checking for the game executable...
 
 if exist %CD%\DungeonSiege.exe (
@@ -104,7 +106,7 @@ if exist %CD%\DungeonSiege.exe (
 :install_detection
 rem Check where the game is installed from the registry
 echo.
-echo Searching for the game installation directory...
+echo Searching for the game installation directory from the registry...
 
 for /F "tokens=2* delims=	 " %%A in (' REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190" /v InstallLocation 2^>nul') do set _INSTALL_LOCATION=%%B
 

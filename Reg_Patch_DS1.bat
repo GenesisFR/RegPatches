@@ -79,6 +79,7 @@ if %_OS_BITNESS% == 32 (
     set _REG_ARG=
 )
 
+rem Or on Linux
 if defined WINEPREFIX (
     set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
     set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
@@ -138,7 +139,7 @@ echo.
 echo Please make a selection:
 echo.
 echo 1. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
-echo 2. Add registry entries for Dungeon Siege 1 Lands of Aranna (needed for DSLOAMod)
+echo 2. Add registry entries for Dungeon Siege 1 Legends of Aranna (needed for DSLOAMod)
 echo 3. Create a directory junction in Program Files (useful for GameRanger)
 echo 4. Export registry entries to a REG file (useful on Linux)
 echo 5. Remove registry entries for both games
@@ -151,6 +152,8 @@ if defined _CHOICE (
 ) else (
     choice /C:123456 /N
 )
+
+echo.
 
 if %ERRORLEVEL% == 1 goto DS1
 if %ERRORLEVEL% == 2 goto DS1LOA
@@ -168,7 +171,7 @@ echo DONE
 goto end
 
 :DS1LOA
-echo Adding registry entries for Dungeon Siege 1: Lands of Aranna...
+echo Adding registry entries for Dungeon Siege 1: Legends of Aranna...
 
 REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
@@ -210,7 +213,7 @@ echo.>> %_REG_FILE%
 
 echo DONE
 echo.
-echo Exporting registry entries for Dungeon Siege 1: Lands of Aranna...
+echo Exporting registry entries for Dungeon Siege 1: Legends of Aranna...
 
 echo [%_MS_LOA_EXPORT%]>> %_REG_FILE%
 echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
@@ -228,7 +231,7 @@ REG DELETE "%_MS_DS%" /f %_REG_ARG% > nul
 echo DONE
 echo.
 
-echo Removing registry entries for Dungeon Siege 1: Lands of Aranna...
+echo Removing registry entries for Dungeon Siege 1: Legends of Aranna...
 REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 
 echo DONE

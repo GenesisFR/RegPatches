@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.46)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.47)
 
 :linux_check
 rem Check if run from Linux
@@ -246,4 +246,3 @@ echo %~0 -c X (where X is a number between 1 and 5)
 echo.
 pause
 endlocal
-

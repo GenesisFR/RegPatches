@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.47)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.48)
 
 :linux_check
 rem Check if run from Linux

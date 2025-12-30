@@ -92,11 +92,11 @@ echo Current directory: %CD%
 echo.
 echo Checking for the game executable...
 
-if exist %CD%\DungeonSiege.exe (
+if exist "%CD%\DungeonSiege.exe" (
     set _INSTALL_LOCATION=%CD%
     echo OK
     goto menu
-) else if exist %CD%\DSLOA.exe (
+) else if exist "%CD%\DSLOA.exe" (
     set _INSTALL_LOCATION=%CD%
     echo OK
     goto menu
@@ -246,3 +246,4 @@ echo %~0 -c X (where X is a number between 1 and 5)
 echo.
 pause
 endlocal
+

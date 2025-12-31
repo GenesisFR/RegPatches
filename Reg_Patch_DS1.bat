@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.47)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.48)
 
 :linux_check
 rem Check if run from Linux
@@ -55,12 +55,12 @@ rem Correct the current directory when a script is run as admin
 
 rem https://ss64.com/nt/syntax-64bit.html
 set _OS_BITNESS=64
-set _PROGRAM_FILES=%PROGRAMFILES(X86)%
+set _PROGRAM_FILES="%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
     if not defined PROCESSOR_ARCHITEW6432 (
         set _OS_BITNESS=32
-        set _PROGRAM_FILES=%PROGRAMFILES%
+        set _PROGRAM_FILES="%PROGRAMFILES%"
     )
 )
 

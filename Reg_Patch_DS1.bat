@@ -1,11 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.48)
-
-:linux_check
-rem Check if run from Linux
-if defined WINEPREFIX goto init
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.50)
 
 :argument_check
 rem Check and validate arguments
@@ -23,6 +19,10 @@ if "%1" == "-c" (
 ) else if not "%1" == "" (
 	goto usage
 )
+
+:linux_check
+rem Check if run from Linux
+if defined WINEPREFIX goto init
 
 :admin_check
 rem https://ss64.com/vb/syntax-elevate.html

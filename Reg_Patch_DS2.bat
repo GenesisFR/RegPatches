@@ -96,8 +96,8 @@ echo Current directory: %CD%
 echo.
 echo Checking for the game executable...
 
-if exist "%CD%\DungeonSiege2.exe" (
-    set _INSTALL_LOCATION=%CD%
+if exist DungeonSiege2.exe (
+    set _INSTALL_LOCATION="%CD%"
     echo OK
     goto menu
 ) else (

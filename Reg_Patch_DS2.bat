@@ -10,9 +10,9 @@ if defined WINEPREFIX goto init
 :argument_check
 rem Check and validate arguments
 if "%1" == "-c" (
-	rem It must be a digit between 1 and 5 to match the choices below
+	rem It must be a digit between 1 and 6 to match the choices below
 	if "%2" GEQ "1" (
-		if "%2" LEQ "5" (
+		if "%2" LEQ "6" (
 			set _CHOICE=%2
 		) else (
 			goto usage
@@ -161,31 +161,33 @@ rem Selection menu
 echo.
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
-echo 2. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW and OpenSpy)
-echo 3. Create a directory junction in Program Files (useful for GameRanger)
-echo 4. Export registry entries to a REG file (useful on Linux)
-echo 5. Remove registry entries for both games
-echo 6. Exit
+echo 1. Add registry entries for both games
+echo 2. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
+echo 3. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW and OpenSpy)
+echo 4. Create a directory junction in Program Files (useful for GameRanger)
+echo 5. Export registry entries to a REG file (useful on Linux)
+echo 6. Remove registry entries for both games
+echo 7. Exit
 echo.
 echo Note: if you're not sure which option to select, just press 1.
 echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:123456 /N /T 0 /D %_CHOICE% 
+    choice /C:1234567 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:123456 /N
+    choice /C:1234567 /N
 )
 
 echo.
 
-if %ERRORLEVEL% == 1 goto DS2
-if %ERRORLEVEL% == 2 goto DS2BW
-if %ERRORLEVEL% == 3 goto junction
-if %ERRORLEVEL% == 4 goto export
-if %ERRORLEVEL% == 5 goto cleanup
-if %ERRORLEVEL% == 6 exit /B
+if %ERRORLEVEL% == 1 call :DS2 & echo. & call :DS2BW & goto end
+if %ERRORLEVEL% == 2 call :DS2 & goto end
+if %ERRORLEVEL% == 3 call :DS2BW & goto end
+if %ERRORLEVEL% == 4 goto junction
+if %ERRORLEVEL% == 5 goto export
+if %ERRORLEVEL% == 6 goto cleanup
+if %ERRORLEVEL% == 7 exit /B
 
 :DS2
 echo Adding registry entries for Dungeon Siege 2...
@@ -195,7 +197,7 @@ REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%
 REG ADD "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG% > nul
 
 echo DONE
-goto end
+exit /B
 
 :DS2BW
 echo Adding registry entries for Dungeon Siege 2: Broken World...
@@ -206,7 +208,7 @@ REG ADD "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG% > n
 REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
-goto end
+exit /B
 
 :junction
 rem https://stackoverflow.com/a/8071683

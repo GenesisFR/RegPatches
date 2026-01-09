@@ -212,8 +212,8 @@ echo.>> %_REG_FILE%
 echo Exporting registry entries for Dungeon Siege 2...
 
 echo [%_MS_DS2_EXPORT%]>> %_REG_FILE%
-echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
+echo "AppPath"=%_INSTALL_LOCATION_DOUBLE_BACKSLASH%>> %_REG_FILE%
+echo "InstallationDirectory"=%_INSTALL_LOCATION_DOUBLE_BACKSLASH%>> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo DONE
@@ -221,12 +221,12 @@ echo.
 echo Exporting registry entries for Dungeon Siege 2: Broken World...
 
 echo [%_2K_BW_EXPORT%]>> %_REG_FILE%
-echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
+echo "AppPath"=%_INSTALL_LOCATION_DOUBLE_BACKSLASH%>> %_REG_FILE%
+echo "InstallationDirectory"=%_INSTALL_LOCATION_DOUBLE_BACKSLASH%>> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo [%_GPG_BW_EXPORT%]>> %_REG_FILE%
-echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
+echo "InstallLocation"=%_INSTALL_LOCATION_DOUBLE_BACKSLASH%>> %_REG_FILE%
 echo.>> %_REG_FILE%
 
 echo DONE

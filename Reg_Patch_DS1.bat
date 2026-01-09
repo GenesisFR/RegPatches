@@ -10,9 +10,9 @@ if defined WINEPREFIX goto init
 :argument_check
 rem Check and validate arguments
 if "%1" == "-c" (
-	rem It must be a digit between 1 and 5 to match the choices below
+	rem It must be a digit between 1 and 6 to match the choices below
 	if "%2" GEQ "1" (
-		if "%2" LEQ "5" (
+		if "%2" LEQ "6" (
 			set _CHOICE=%2
 		) else (
 			goto usage
@@ -168,29 +168,31 @@ rem Selection menu
 echo.
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
-echo 2. Add registry entries for Dungeon Siege 1 Legends of Aranna (needed for DSLOAMod)
-echo 3. Create a directory junction in Program Files (useful for GameRanger)
-echo 4. Export registry entries to a REG file (useful on Linux)
-echo 5. Remove registry entries for both games
-echo 6. Exit
+echo 1. Add registry entries for both games
+echo 2. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
+echo 3. Add registry entries for Dungeon Siege 1 Legends of Aranna (needed for DSLOAMod)
+echo 4. Create a directory junction in Program Files (useful for GameRanger)
+echo 5. Export registry entries to a REG file (useful on Linux)
+echo 6. Remove registry entries for both games
+echo 7. Exit
 echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:123456 /N /T 0 /D %_CHOICE% 
+    choice /C:1234567 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:123456 /N
+    choice /C:1234567 /N
 )
 
 echo.
 
-if %ERRORLEVEL% == 1 goto DS1
-if %ERRORLEVEL% == 2 goto DS1LOA
-if %ERRORLEVEL% == 3 goto junction
-if %ERRORLEVEL% == 4 goto export
-if %ERRORLEVEL% == 5 goto cleanup
-if %ERRORLEVEL% == 6 exit /B
+if %ERRORLEVEL% == 1 call :DS1 & echo. & call :DS1LOA & goto end
+if %ERRORLEVEL% == 2 call :DS1 & goto end
+if %ERRORLEVEL% == 3 call :DS1LOA & goto end
+if %ERRORLEVEL% == 4 goto junction
+if %ERRORLEVEL% == 5 goto export
+if %ERRORLEVEL% == 6 goto cleanup
+if %ERRORLEVEL% == 7 exit /B
 
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
@@ -198,7 +200,7 @@ echo Adding registry entries for Dungeon Siege 1...
 REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
-goto end
+exit /B
 
 :DS1LOA
 echo Adding registry entries for Dungeon Siege 1: Legends of Aranna...
@@ -206,7 +208,7 @@ echo Adding registry entries for Dungeon Siege 1: Legends of Aranna...
 REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
-goto end
+exit /B
 
 :junction
 rem https://stackoverflow.com/a/8071683

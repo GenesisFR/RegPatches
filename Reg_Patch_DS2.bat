@@ -73,6 +73,8 @@ set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
 set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege2
 set _REG_ARG=/reg:32
 set _REG_FILE=%~n0.reg
+set _REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902
+set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
@@ -80,6 +82,7 @@ if %_OS_BITNESS% == 32 (
     set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
     set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
     set _REG_ARG=
+	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
 )
 
 rem Or on Linux
@@ -88,6 +91,7 @@ if defined WINEPREFIX (
     set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
     set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
     set _REG_ARG=
+	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
 )
 
 :exe_check
@@ -104,19 +108,41 @@ if exist DungeonSiege2.exe (
     echo DungeonSiege2.exe not found in the current directory!
 )
 
-:install_detection
+:steam_install_detection
 rem Check where the game is installed from the registry
 echo.
-echo Searching for the game installation directory...
+echo Searching for the game Steam installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200" /v InstallLocation 2^>nul') do set _INSTALL_LOCATION=%%B
+for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo.
-    echo No game installation directory found!
+    echo No Steam installation directory found!
+) else (
+    echo Steam installation directory found: %_INSTALL_LOCATION%
+
+    rem Check for the game executable in the installation directory
+    echo Checking for the game executable...
+
+    if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+        echo OK
+        goto menu
+    ) else (
+        echo DungeonSiege2.exe not found in the installation directory!
+    )
+)
+
+:gog_install_detection
+rem Check where the game is installed from the registry
+echo.
+echo Searching for the game GOG installation directory...
+
+for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
+
+if "%_INSTALL_LOCATION%" == "" (
+    echo No GOG installation directory found!
     goto end
 ) else (
-    echo Game installation directory found: %_INSTALL_LOCATION%
+    echo GOG installation directory found: %_INSTALL_LOCATION%
 
     rem Check for the game executable in the installation directory
     echo Checking for the game executable...

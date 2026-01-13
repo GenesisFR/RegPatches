@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.50)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.51)
 
 :argument_check
 rem Check and validate arguments
@@ -55,12 +55,12 @@ rem Correct current directory when a script is run as admin
 
 rem https://ss64.com/nt/syntax-64bit.html
 set _OS_BITNESS=64
-set _PROGRAM_FILES="%PROGRAMFILES(X86)%"
+set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
     if not defined PROCESSOR_ARCHITEW6432 (
         set _OS_BITNESS=32
-        set _PROGRAM_FILES="%PROGRAMFILES%"
+        set "_PROGRAM_FILES=%PROGRAMFILES%"
     )
 )
 
@@ -213,14 +213,14 @@ exit /B
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%a in ("%_INSTALL_LOCATION%") do set _CURRENT_DIRECTORY=%%~nxa
+for %%a in ("%_INSTALL_LOCATION%") do set _INSTALL_DIRECTORY_NAME=%%~nxa
 
-if exist "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" rmdir /Q "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" > nul
-mklink /J "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" "%_INSTALL_LOCATION%"
+if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
+mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
 if %ERRORLEVEL% == 0 (
     echo.
-    echo You can now select the game's executable from "%_PROGRAM_FILES%\%_CURRENT_DIRECTORY%" to add the game to GameRanger.
+    echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
     echo.
     echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
     echo It can safely be renamed or deleted.
@@ -257,7 +257,6 @@ echo.>> %_REG_FILE%
 
 echo [%_GPG_BW_EXPORT%]>> %_REG_FILE%
 echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo.>> %_REG_FILE%
 
 echo DONE
 echo.

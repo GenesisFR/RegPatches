@@ -2,6 +2,8 @@
 @setlocal enableextensions
 
 title Reg Patcher for Dungeon Siege 2 by Genesis (v1.51)
+echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
+echo.
 
 :argument_check
 rem Check and validate arguments
@@ -286,3 +288,4 @@ echo %~0 -c X (where X is a number between 1 and 5)
 echo.
 pause
 endlocal
+

@@ -282,10 +282,9 @@ goto end
 :usage
 echo Usage:
 echo.
-echo %~0 -c X (where X is a number between 1 and 5)
+echo %~0 -c X (where X is a number between 1 and 6)
 
 :end
 echo.
 pause
 endlocal
-

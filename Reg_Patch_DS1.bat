@@ -10,7 +10,7 @@ rem Check and validate arguments
 if "%1" == "-c" (
 	rem It must be a digit between 1 and 6 to match the choices below
 	if "%2" GEQ "1" (
-		if "%2" LEQ "7" (
+		if "%2" LEQ "8" (
 			set _CHOICE=%2
 		) else (
 			goto usage
@@ -176,15 +176,16 @@ echo 3. Add registry entries for Dungeon Siege 1: Legends of Aranna (needed for 
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
 echo 5. Export registry entries to a REG file (useful on Linux)
 echo 6. Remove registry entries for both games
-echo 7. Add environment variable for Gmax (useful for modders installing SiegeMax)
-echo 8. Exit
+echo 7. Add OpenZone server (useful to play online through ZoneMatch)
+echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
+echo 9. Exit
 echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:12345678 /N /T 0 /D %_CHOICE%
+    choice /C:123456789 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:12345678 /N
+    choice /C:123456789 /N
 )
 
 echo.
@@ -195,8 +196,9 @@ if %ERRORLEVEL% == 3 call :DS1LOA & goto end
 if %ERRORLEVEL% == 4 goto junction
 if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
-if %ERRORLEVEL% == 7 goto gmax
-if %ERRORLEVEL% == 8 exit /B
+if %ERRORLEVEL% == 7 goto openzone
+if %ERRORLEVEL% == 8 goto gmax
+if %ERRORLEVEL% == 9 exit /B
 
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
@@ -273,6 +275,24 @@ REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 echo DONE
 goto end
 
+:openzone
+echo Adding the OpenZone server...
+
+echo [multiplayer]> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo gun_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo gun_server_port = 2300>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo news_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo news_server_port = 2301>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo news_server_file = news.txt>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo autoupdate_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+echo autoupdate_proxy = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+
+echo DONE
+echo.
+echo A new file called "DungeonSiege.ini" has been created in the game installation directory.
+
+goto end
+
 :gmax
 echo Checking for the Gmax executable...
 
@@ -295,7 +315,7 @@ goto end
 :usage
 echo Usage:
 echo.
-echo %~0 -c X (where X is a number between 1 and 7)
+echo %~0 -c X (where X is a number between 1 and 8)
 
 :end
 echo.

@@ -10,7 +10,7 @@ rem Check and validate arguments
 if "%1" == "-c" (
 	rem It must be a digit between 1 and 6 to match the choices below
 	if "%2" GEQ "1" (
-		if "%2" LEQ "6" (
+		if "%2" LEQ "7" (
 			set _CHOICE=%2
 		) else (
 			goto usage
@@ -170,20 +170,21 @@ rem Selection menu
 echo.
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for both games
+echo 1. Add registry entries for Dungeon Siege 1 and Legends of Aranna
 echo 2. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
-echo 3. Add registry entries for Dungeon Siege 1 Legends of Aranna (needed for DSLOAMod)
+echo 3. Add registry entries for Dungeon Siege 1: Legends of Aranna (needed for DSLOAMod)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
 echo 5. Export registry entries to a REG file (useful on Linux)
 echo 6. Remove registry entries for both games
-echo 7. Exit
+echo 7. Add environment variable for Gmax (useful for modders installing SiegeMax)
+echo 8. Exit
 echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:1234567 /N /T 0 /D %_CHOICE%
+    choice /C:12345678 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:1234567 /N
+    choice /C:12345678 /N
 )
 
 echo.
@@ -194,7 +195,8 @@ if %ERRORLEVEL% == 3 call :DS1LOA & goto end
 if %ERRORLEVEL% == 4 goto junction
 if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
-if %ERRORLEVEL% == 7 exit /B
+if %ERRORLEVEL% == 7 goto gmax
+if %ERRORLEVEL% == 8 exit /B
 
 :DS1
 echo Adding registry entries for Dungeon Siege 1...
@@ -271,10 +273,29 @@ REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 echo DONE
 goto end
 
+:gmax
+echo Checking for the Gmax executable...
+
+if exist gmax.exe (
+    echo OK
+    echo.
+	echo Adding the environment variable for Gmax...
+	setx GMAXLOC "%CD%" > nul
+) else (
+    echo gmax.exe not found in the current directory!
+    echo.
+	pause
+	cls
+	goto menu
+)
+
+echo DONE
+goto end
+
 :usage
 echo Usage:
 echo.
-echo %~0 -c X (where X is a number between 1 and 6)
+echo %~0 -c X (where X is a number between 1 and 7)
 
 :end
 echo.

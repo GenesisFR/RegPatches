@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.51)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
@@ -78,14 +78,6 @@ set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Stea
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-    set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
-    set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
-    set _REG_ARG=
-	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626
-)
-
-rem Or on Linux
-if defined WINEPREFIX (
     set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
     set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
     set _REG_ARG=

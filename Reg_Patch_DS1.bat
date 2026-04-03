@@ -162,9 +162,9 @@ rem Selection menu
 echo.
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for Dungeon Siege 1 and Legends of Aranna
-echo 2. Add registry entries for Dungeon Siege 1 (needed for DSMod and the DS1 Tool Kit)
-echo 3. Add registry entries for Dungeon Siege 1: Legends of Aranna (needed for DSLOAMod)
+echo 1. Add registry entries for Dungeon Siege and Legends of Aranna
+echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Tool Kit)
+echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
 echo 5. Export registry entries to a REG file (useful on Linux)
 echo 6. Remove registry entries for both games
@@ -193,7 +193,7 @@ if %ERRORLEVEL% == 8 goto gmax
 if %ERRORLEVEL% == 9 exit /B
 
 :DS1
-echo Adding registry entries for Dungeon Siege 1...
+echo Adding registry entries for Dungeon Siege...
 
 REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
@@ -201,7 +201,7 @@ echo DONE
 exit /B
 
 :DS1LOA
-echo Adding registry entries for Dungeon Siege 1: Legends of Aranna...
+echo Adding registry entries for Dungeon Siege: Legends of Aranna...
 
 REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
@@ -236,7 +236,7 @@ set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
 echo REGEDIT4> %_REG_FILE%
 echo.>> %_REG_FILE%
 
-echo Exporting registry entries for Dungeon Siege 1...
+echo Exporting registry entries for Dungeon Siege...
 
 echo [%_MS_DS_EXPORT%]>> %_REG_FILE%
 echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
@@ -244,7 +244,7 @@ echo.>> %_REG_FILE%
 
 echo DONE
 echo.
-echo Exporting registry entries for Dungeon Siege 1: Legends of Aranna...
+echo Exporting registry entries for Dungeon Siege: Legends of Aranna...
 
 echo [%_MS_LOA_EXPORT%]>> %_REG_FILE%
 echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
@@ -256,12 +256,12 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 goto end
 
 :cleanup
-echo Removing registry entries for Dungeon Siege 1...
+echo Removing registry entries for Dungeon Siege...
 REG DELETE "%_MS_DS%" /f %_REG_ARG% > nul
 echo DONE
 echo.
 
-echo Removing registry entries for Dungeon Siege 1: Legends of Aranna...
+echo Removing registry entries for Dungeon Siege: Legends of Aranna...
 REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
 
 echo DONE

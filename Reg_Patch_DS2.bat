@@ -1,7 +1,7 @@
 @echo off
 @setlocal enableextensions
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.51)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
@@ -87,15 +87,6 @@ if %_OS_BITNESS% == 32 (
 	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
 )
 
-rem Or on Linux
-if defined WINEPREFIX (
-    set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
-    set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
-    set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
-    set _REG_ARG=
-	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
-)
-
 :exe_check
 rem Check for the game executable in the current directory
 echo Current directory: %CD%
@@ -163,9 +154,9 @@ rem Selection menu
 echo.
 echo Please make a selection:
 echo.
-echo 1. Add registry entries for both games
+echo 1. Add registry entries for Dungeon Siege 2 and Dungeon Siege 2: Broken World
 echo 2. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
-echo 3. Add registry entries for Dungeon Siege 2 Broken World (needed for Elys DS2BW and OpenSpy)
+echo 3. Add registry entries for Dungeon Siege 2: Broken World (needed for Elys DS2BW and OpenSpy)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
 echo 5. Export registry entries to a REG file (useful on Linux)
 echo 6. Remove registry entries for both games
@@ -228,6 +219,7 @@ if %ERRORLEVEL% == 0 (
     echo It can safely be renamed or deleted.
 )
 
+echo.
 echo DONE
 goto end
 

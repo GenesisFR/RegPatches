@@ -1,5 +1,5 @@
 @echo off
-@setlocal enableextensions
+setlocal
 
 title Reg Patcher for Dungeon Siege 1 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
@@ -53,7 +53,7 @@ echo.
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct the current directory when a script is run as admin
-@cd /d "%~dp0"
+cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
 set _OS_BITNESS=64
@@ -107,10 +107,10 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game Steam installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo No game installation directory found!
+    echo No Steam installation directory found!
 ) else (
     echo Steam installation directory found: %_INSTALL_LOCATION%
 
@@ -134,7 +134,7 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game GOG installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
     echo No GOG installation directory found!
@@ -166,9 +166,9 @@ echo 1. Add registry entries for Dungeon Siege and Legends of Aranna
 echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Tool Kit)
 echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
-echo 5. Export registry entries to a REG file (useful on Linux)
+echo 5. Export registry entries to a REG file (to import it manually)
 echo 6. Remove registry entries for both games
-echo 7. Add OpenZone server (useful to play online through ZoneMatch)
+echo 7. Redirect ZoneMatch to OpenZone (needed to play online through ZoneMatch)
 echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
 echo 9. Exit
 echo.
@@ -211,7 +211,7 @@ exit /B
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%a in ("%_INSTALL_LOCATION%") do set _INSTALL_DIRECTORY_NAME=%%~nxa
+for %%A in ("%_INSTALL_LOCATION%") do set _INSTALL_DIRECTORY_NAME=%%~nxA
 
 if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
@@ -268,22 +268,108 @@ echo DONE
 goto end
 
 :openzone
-echo Adding the OpenZone server...
+echo Redirecting the ZoneMatch server to OpenZone...
 
-echo [multiplayer]> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo gun_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo gun_server_port = 2300>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo news_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo news_server_port = 2301>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo news_server_file = news.txt>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo autoupdate_server = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
-echo autoupdate_proxy = gz.exsurge.net>> "%_INSTALL_LOCATION%\DungeonSiege.ini"
+rem https://serverfault.com/a/701644
+rem Get the path to My Documents
+for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v "Personal" 2^>nul') do set _MY_DOCUMENTS=%%B
 
-echo DONE
-echo.
-echo A new file called "DungeonSiege.ini" has been created in the game installation directory.
+set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
+set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
+set _CFG_FILE_FOUND=0
+
+rem echo _CFG_FILE_DS = %_CFG_FILE_DS%
+rem echo _CFG_FILE_LOA = %_CFG_FILE_LOA%
+
+rem Update the DS config file if it exists
+if exist "%_CFG_FILE_DS%" (
+	set _CFG_FILE_FOUND=1
+
+	setlocal EnableDelayedExpansion
+	call :read_ini "%_CFG_FILE_DS%"
+	setlocal DisableDelayedExpansion
+
+	call :append_mp_section "%_CFG_FILE_DS%"
+)
+
+rem Update the LOA config file if it exists
+if exist "%_CFG_FILE_LOA%" (
+	set _CFG_FILE_FOUND=1
+
+	setlocal EnableDelayedExpansion
+	call :read_ini "%_CFG_FILE_LOA%"
+	setlocal DisableDelayedExpansion
+
+	call :append_mp_section "%_CFG_FILE_LOA%"
+)
+
+if %_CFG_FILE_FOUND% EQU 0 (
+	echo No config file found! Make sure to run the game at least once to generate it.
+) else (
+	echo DONE
+)
 
 goto end
+
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
+rem Store the beginning of the config file to a temp file
+:read_ini
+set CFG_FILE=%1
+set CFG_FILE_TEMP="%~1.tmp"
+set TARGET_SECTION=multiplayer
+
+rem echo read_ini_CFG_FILE = %CFG_FILE%
+rem echo read_ini_CFG_FILE_TEMP = %CFG_FILE_TEMP%
+
+if exist %CFG_FILE_TEMP% del %CFG_FILE_TEMP%
+set "inSection=0"
+
+rem Read the config file line by line
+rem The | character after "eol=" is to fix a weird syntax error on Linux
+for /F "usebackq eol=| delims=" %%L in (%CFG_FILE%) do (
+	set "line=%%L"
+
+	rem Section detection logic
+	if "!line:~0,1!"=="[" if "!line:~-1!"=="]" (
+		for /F "delims=[]" %%S in ("!line!") do (
+			if /I "%%S"=="%TARGET_SECTION%" (set "inSection=1")
+		)
+	)
+
+	rem Write the current line to the temp file until we reach the MP section
+	if !inSection! EQU 0 (
+		echo !line!>> %CFG_FILE_TEMP%
+	) else (
+		exit /B 
+	)
+)
+
+exit /B
+
+rem Append the MP section to the temp file
+:append_mp_section
+set CFG_FILE=%1
+set CFG_FILE_TEMP="%~1.tmp"
+
+rem echo append_mp_section_CFG_FILE = %CFG_FILE%
+rem echo append_mp_section_CFG_FILE_TEMP = %CFG_FILE_TEMP%
+
+echo.>> %CFG_FILE_TEMP%
+echo [multiplayer]>> %CFG_FILE_TEMP%
+echo gun_server = gz.exsurge.net>> %CFG_FILE_TEMP%
+echo gun_server_port = 2300>> %CFG_FILE_TEMP%
+echo news_server = gz.exsurge.net>> %CFG_FILE_TEMP%
+echo news_server_port = 2301>> %CFG_FILE_TEMP%
+echo news_server_file = news.txt>> %CFG_FILE_TEMP%
+echo autoupdate_server = gz.exsurge.net>> %CFG_FILE_TEMP%
+echo autoupdate_proxy = gz.exsurge.net>> %CFG_FILE_TEMP%
+echo.>> %CFG_FILE_TEMP%
+echo [debug]>> %CFG_FILE_TEMP%
+
+rem Overwrite the original config file
+move /Y %CFG_FILE_TEMP% %CFG_FILE% > nul
+
+exit /B
 
 :gmax
 echo Checking for the Gmax executable...
@@ -312,4 +398,3 @@ echo %~0 -c X (where X is a number between 1 and 8)
 :end
 echo.
 pause
-endlocal

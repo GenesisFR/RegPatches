@@ -1,5 +1,5 @@
 @echo off
-@setlocal enableextensions
+setlocal
 
 title Reg Patcher for Dungeon Siege 2 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
@@ -33,19 +33,19 @@ echo Checking if the script is run as admin...
 fsutil dirty query %SYSTEMDRIVE% > nul
 
 if %ERRORLEVEL%% == 0 (
-    echo OK
+	echo OK
 ) else (
-    echo ERROR: admin rights not detected.
-    echo.
-    echo The script will now restart as admin.
+	echo ERROR: admin rights not detected.
+	echo.
+	echo The script will now restart as admin.
 
-    echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
-    echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
+	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
+	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
 
-    "%TEMP%\ElevateMe.vbs"
-    del "%TEMP%\ElevateMe.vbs"
-    
-    exit /B
+	"%TEMP%\ElevateMe.vbs"
+	del "%TEMP%\ElevateMe.vbs"
+	
+	exit /B
 )
 
 echo.
@@ -60,10 +60,10 @@ set _OS_BITNESS=64
 set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
-    if not defined PROCESSOR_ARCHITEW6432 (
-        set _OS_BITNESS=32
-        set "_PROGRAM_FILES=%PROGRAMFILES%"
-    )
+	if not defined PROCESSOR_ARCHITEW6432 (
+		set _OS_BITNESS=32
+		set "_PROGRAM_FILES=%PROGRAMFILES%"
+	)
 )
 
 rem Shortcuts for registry stuff
@@ -80,10 +80,10 @@ set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Stea
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-    set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
-    set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
-    set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
-    set _REG_ARG=
+	set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
+	set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
+	set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
+	set _REG_ARG=
 	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
 )
 
@@ -94,11 +94,11 @@ echo.
 echo Checking for the game executable...
 
 if exist DungeonSiege2.exe (
-    set "_INSTALL_LOCATION=%CD%"
-    echo OK
-    goto menu
+	set "_INSTALL_LOCATION=%CD%"
+	echo OK
+	goto menu
 ) else (
-    echo DungeonSiege2.exe not found in the current directory!
+	echo DungeonSiege2.exe not found in the current directory!
 )
 
 :steam_install_detection
@@ -109,19 +109,19 @@ echo Searching for the game Steam installation directory...
 for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo No Steam installation directory found!
+	echo No Steam installation directory found!
 ) else (
-    echo Steam installation directory found: %_INSTALL_LOCATION%
+	echo Steam installation directory found: %_INSTALL_LOCATION%
 
-    rem Check for the game executable in the installation directory
-    echo Checking for the game executable...
+	rem Check for the game executable in the installation directory
+	echo Checking for the game executable...
 
-    if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-        echo OK
-        goto menu
-    ) else (
-        echo DungeonSiege2.exe not found in the installation directory!
-    )
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+		echo OK
+		goto menu
+	) else (
+		echo DungeonSiege2.exe not found in the installation directory!
+	)
 )
 
 :gog_install_detection
@@ -132,21 +132,21 @@ echo Searching for the game GOG installation directory...
 for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo No GOG installation directory found!
-    goto end
+	echo No GOG installation directory found!
+	goto end
 ) else (
-    echo GOG installation directory found: %_INSTALL_LOCATION%
+	echo GOG installation directory found: %_INSTALL_LOCATION%
 
-    rem Check for the game executable in the installation directory
-    echo Checking for the game executable...
+	rem Check for the game executable in the installation directory
+	echo Checking for the game executable...
 
-    if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-        echo OK
-        goto menu
-    ) else (
-        echo DungeonSiege2.exe not found in the installation directory!
-        goto end
-    )
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+		echo OK
+		goto menu
+	) else (
+		echo DungeonSiege2.exe not found in the installation directory!
+		goto end
+	)
 )
 
 :menu
@@ -167,9 +167,9 @@ echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:1234567 /N /T 0 /D %_CHOICE%
+	choice /C:1234567 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:1234567 /N
+	choice /C:1234567 /N
 )
 
 echo.
@@ -212,11 +212,11 @@ if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
 if %ERRORLEVEL% == 0 (
-    echo.
-    echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-    echo.
-    echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-    echo It can safely be renamed or deleted.
+	echo.
+	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
+	echo.
+	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+	echo It can safely be renamed or deleted.
 )
 
 echo.
@@ -279,4 +279,3 @@ echo %~0 -c X (where X is a number between 1 and 6)
 :end
 echo.
 pause
-endlocal

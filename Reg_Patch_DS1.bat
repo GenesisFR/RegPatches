@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.52)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.53)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
@@ -225,21 +225,24 @@ rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-st
 rem Double backslashes in the install directory path
 set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
 
-echo REGEDIT4> %_REG_FILE%
-echo.>> %_REG_FILE%
-
 echo Exporting registry entries for Dungeon Siege...
 
-echo [%_MS_DS_EXPORT%]>> %_REG_FILE%
-echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo.>> %_REG_FILE%
+(
+	echo REGEDIT4
+	echo.
+	echo [%_MS_DS_EXPORT%]
+	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo.
+) > %_REG_FILE%
 
 echo DONE
 echo.
 echo Exporting registry entries for Dungeon Siege: Legends of Aranna...
 
-echo [%_MS_LOA_EXPORT%]>> %_REG_FILE%
-echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
+(
+	echo [%_MS_LOA_EXPORT%]
+	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+) >> %_REG_FILE%
 
 echo DONE
 echo.
@@ -333,7 +336,7 @@ for /F "usebackq eol=| delims=" %%L in (%_CFG_FILE%) do (
 	if !inSection! EQU 0 (
 		echo !line!>> %_CFG_FILE_TEMP%
 	) else (
-		exit /B 
+		exit /B
 	)
 )
 
@@ -347,17 +350,19 @@ set _CFG_FILE_TEMP="%~1.tmp"
 rem echo append_mp_section _CFG_FILE = %_CFG_FILE%
 rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 
-echo.>> %_CFG_FILE_TEMP%
-echo [multiplayer]>> %_CFG_FILE_TEMP%
-echo gun_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
-echo gun_server_port = 2300>> %_CFG_FILE_TEMP%
-echo news_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
-echo news_server_port = 2301>> %_CFG_FILE_TEMP%
-echo news_server_file = news.txt>> %_CFG_FILE_TEMP%
-echo autoupdate_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
-echo autoupdate_proxy = gz.exsurge.net>> %_CFG_FILE_TEMP%
-echo.>> %_CFG_FILE_TEMP%
-echo [debug]>> %_CFG_FILE_TEMP%
+(
+	echo.
+	echo [multiplayer]
+	echo gun_server = gz.exsurge.net
+	echo gun_server_port = 2300
+	echo news_server = gz.exsurge.net
+	echo news_server_port = 2301
+	echo news_server_file = news.txt
+	echo autoupdate_server = gz.exsurge.net
+	echo autoupdate_proxy = gz.exsurge.net
+	echo.
+	echo [debug]
+) >> %_CFG_FILE_TEMP%
 
 rem Overwrite the original config file
 move /Y %_CFG_FILE_TEMP% %_CFG_FILE% > nul

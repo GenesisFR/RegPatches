@@ -379,6 +379,7 @@ if exist gmax.exe (
 ) else (
 	echo gmax.exe not found in the current directory!
 	echo.
+	set _CHOICE=
 	pause
 	cls
 	goto menu

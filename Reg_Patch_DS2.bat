@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.52)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.53)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
@@ -102,7 +102,7 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game Steam installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
 	echo No Steam installation directory found!
@@ -125,7 +125,7 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game GOG installation directory...
 
-for /F "tokens=2* delims=	 " %%A in (' REG QUERY "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
 	echo No GOG installation directory found!
@@ -181,9 +181,11 @@ if %ERRORLEVEL% == 7 exit /B
 :ds2
 echo Adding registry entries for Dungeon Siege 2...
 
-reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG% > nul
+(
+	reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
+	reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
+	reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG%
+) > nul
 
 echo DONE
 exit /B
@@ -191,10 +193,12 @@ exit /B
 :ds2bw
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
-reg add "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG% > nul
-reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+(
+	reg add "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
+	reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
+	reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG%
+	reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
+) > nul
 
 echo DONE
 exit /B
@@ -224,29 +228,32 @@ rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-st
 rem Double backslashes in the install directory path
 set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
 
-echo REGEDIT4> %_REG_FILE%
-echo.>> %_REG_FILE%
-
 echo Exporting registry entries for Dungeon Siege 2...
 
-echo [%_MS_DS2_EXPORT%]>> %_REG_FILE%
-echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "PID"="0000-0000-0000-0000">> %_REG_FILE%
-echo.>> %_REG_FILE%
+(
+	echo REGEDIT4
+	echo.
+	echo [%_MS_DS2_EXPORT%]
+	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "PID"="0000-0000-0000-0000"
+	echo.
+) > %_REG_FILE%
 
 echo DONE
 echo.
 echo Exporting registry entries for Dungeon Siege 2: Broken World...
 
-echo [%_2K_BW_EXPORT%]>> %_REG_FILE%
-echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
-echo "PID"="0000-0000-0000-0000">> %_REG_FILE%
-echo.>> %_REG_FILE%
+(
+	echo [%_2K_BW_EXPORT%]
+	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "PID"="0000-0000-0000-0000"
+	echo.
 
-echo [%_GPG_BW_EXPORT%]>> %_REG_FILE%
-echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%">> %_REG_FILE%
+	echo [%_GPG_BW_EXPORT%]
+	echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+) >> %_REG_FILE%
 
 echo DONE
 echo.

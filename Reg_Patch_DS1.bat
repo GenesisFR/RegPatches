@@ -8,7 +8,7 @@ echo.
 :argument_check
 rem Check and validate arguments
 if "%1" == "-c" (
-	rem It must be a digit between 1 and 6 to match the choices below
+	rem It must be a digit between 1 and 8 to match the choices below
 	if "%2" GEQ "1" (
 		if "%2" LEQ "8" (
 			set _CHOICE=%2
@@ -32,7 +32,7 @@ rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
 fsutil dirty query %SYSTEMDRIVE% > nul
 
-if %ERRORLEVEL%% == 0 (
+if %ERRORLEVEL% == 0 (
     echo OK
 ) else (
     echo ERROR: admin rights not detected.
@@ -398,3 +398,4 @@ echo %~0 -c X (where X is a number between 1 and 8)
 :end
 echo.
 pause
+endlocal

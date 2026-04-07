@@ -33,19 +33,19 @@ echo Checking if the script is run as admin...
 fsutil dirty query %SYSTEMDRIVE% > nul
 
 if %ERRORLEVEL% == 0 (
-    echo OK
+	echo OK
 ) else (
-    echo ERROR: admin rights not detected.
-    echo.
-    echo The script will now restart as admin.
+	echo ERROR: admin rights not detected.
+	echo.
+	echo The script will now restart as admin.
 
-    echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
-    echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
+	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
+	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
 
-    "%TEMP%\ElevateMe.vbs"
-    del "%TEMP%\ElevateMe.vbs"
-    
-    exit /B
+	"%TEMP%\ElevateMe.vbs"
+	del "%TEMP%\ElevateMe.vbs"
+	
+	exit /B
 )
 
 echo.
@@ -60,10 +60,10 @@ set _OS_BITNESS=64
 set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
-    if not defined PROCESSOR_ARCHITEW6432 (
-        set _OS_BITNESS=32
-        set "_PROGRAM_FILES=%PROGRAMFILES%"
-    )
+	if not defined PROCESSOR_ARCHITEW6432 (
+		set _OS_BITNESS=32
+		set "_PROGRAM_FILES=%PROGRAMFILES%"
+	)
 )
 
 rem Shortcuts for registry stuff
@@ -78,9 +78,9 @@ set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Stea
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-    set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
-    set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
-    set _REG_ARG=
+	set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
+	set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
+	set _REG_ARG=
 	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626
 )
 
@@ -91,15 +91,15 @@ echo.
 echo Checking for the game executable...
 
 if exist DungeonSiege.exe (
-    set "_INSTALL_LOCATION=%CD%"
-    echo OK
-    goto menu
+	set "_INSTALL_LOCATION=%CD%"
+	echo OK
+	goto menu
 ) else if exist DSLOA.exe (
-    set "_INSTALL_LOCATION=%CD%"
-    echo OK
-    goto menu
+	set "_INSTALL_LOCATION=%CD%"
+	echo OK
+	goto menu
 ) else (
-    echo DungeonSiege.exe and DSLOA.exe not found in the current directory!
+	echo DungeonSiege.exe and DSLOA.exe not found in the current directory!
 )
 
 :steam_install_detection
@@ -110,23 +110,23 @@ echo Searching for the game Steam installation directory...
 for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo No Steam installation directory found!
+	echo No Steam installation directory found!
 ) else (
-    echo Steam installation directory found: %_INSTALL_LOCATION%
+	echo Steam installation directory found: %_INSTALL_LOCATION%
 
-    rem Check for game executables in the installation directory
-    echo Checking for the game executable...
+	rem Check for game executables in the installation directory
+	echo Checking for the game executable...
 
-    if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-        echo OK
-        goto menu
-    ) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-        echo OK
-        goto menu
-    ) else (
-        echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
-        goto end
-    )
+	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+		echo OK
+		goto menu
+	) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+		echo OK
+		goto menu
+	) else (
+		echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
+		goto end
+	)
 )
 
 :gog_install_detection
@@ -137,24 +137,24 @@ echo Searching for the game GOG installation directory...
 for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
-    echo No GOG installation directory found!
-    goto end
+	echo No GOG installation directory found!
+	goto end
 ) else (
-    echo GOG installation directory found: %_INSTALL_LOCATION%
+	echo GOG installation directory found: %_INSTALL_LOCATION%
 
-    rem Check for the game executable in the installation directory
-    echo Checking for the game executable...
+	rem Check for the game executable in the installation directory
+	echo Checking for the game executable...
 
-    if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-        echo OK
-        goto menu
-    ) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-        echo OK
-        goto menu
-    ) else (
-        echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
-        goto end
-    )
+	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+		echo OK
+		goto menu
+	) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+		echo OK
+		goto menu
+	) else (
+		echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
+		goto end
+	)
 )
 
 :menu
@@ -175,9 +175,9 @@ echo.
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
-    choice /C:123456789 /N /T 0 /D %_CHOICE%
+	choice /C:123456789 /N /T 0 /D %_CHOICE%
 ) else (
-    choice /C:123456789 /N
+	choice /C:123456789 /N
 )
 
 echo.
@@ -217,11 +217,11 @@ if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
 if %ERRORLEVEL% == 0 (
-    echo.
-    echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-    echo.
-    echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-    echo It can safely be renamed or deleted.
+	echo.
+	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
+	echo.
+	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+	echo It can safely be renamed or deleted.
 )
 
 echo.
@@ -375,13 +375,13 @@ exit /B
 echo Checking for the Gmax executable...
 
 if exist gmax.exe (
-    echo OK
-    echo.
+	echo OK
+	echo.
 	echo Adding the environment variable for Gmax...
 	setx GMAXLOC "%CD%" > nul
 ) else (
-    echo gmax.exe not found in the current directory!
-    echo.
+	echo gmax.exe not found in the current directory!
+	echo.
 	pause
 	cls
 	goto menu

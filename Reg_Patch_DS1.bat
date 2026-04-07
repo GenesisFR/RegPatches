@@ -225,7 +225,7 @@ rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-st
 rem Double backslashes in the install directory path
 set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
 
-echo Exporting registry entries for Dungeon Siege...
+echo Exporting registry entries for Dungeon Siege and Legends of Aranna...
 
 (
 	echo REGEDIT4
@@ -233,16 +233,9 @@ echo Exporting registry entries for Dungeon Siege...
 	echo [%_MS_DS_EXPORT%]
 	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 	echo.
-) > %_REG_FILE%
-
-echo DONE
-echo.
-echo Exporting registry entries for Dungeon Siege: Legends of Aranna...
-
-(
 	echo [%_MS_LOA_EXPORT%]
 	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-) >> %_REG_FILE%
+) > %_REG_FILE%
 
 echo DONE
 echo.

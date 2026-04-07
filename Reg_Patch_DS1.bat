@@ -165,7 +165,7 @@ echo 1. Add registry entries for Dungeon Siege and Legends of Aranna
 echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Tool Kit)
 echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
-echo 5. Export registry entries to a REG file (to import it manually)
+echo 5. Export registry entries to a REG file (to import them manually)
 echo 6. Remove registry entries for both games
 echo 7. Redirect ZoneMatch to OpenZone (needed to play online through ZoneMatch)
 echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
@@ -330,7 +330,11 @@ for /F "usebackq eol=| delims=" %%L in (%_CFG_FILE%) do (
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !inSection! EQU 0 (
-		echo !line!>> %_CFG_FILE_TEMP%
+		if "!line!" == "" (
+			echo.>> %_CFG_FILE_TEMP%
+		) else (
+			echo !line!>> %_CFG_FILE_TEMP%
+		)
 	) else (
 		exit /B
 	)
@@ -347,7 +351,6 @@ rem echo append_mp_section _CFG_FILE = %_CFG_FILE%
 rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 
 (
-	echo.
 	echo [multiplayer]
 	echo gun_server = gz.exsurge.net
 	echo gun_server_port = 2300

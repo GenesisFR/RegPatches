@@ -5,22 +5,18 @@ title Reg Patcher for Dungeon Siege 1 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
-:argument_check
+:parse_args
 rem Check and validate arguments
-if "%1" == "-c" (
+set _CHOICE=
+
+if "%~1"=="" goto linux_check
+if /I "%~1"=="-c" (
+	rem Second argument missing
+	if "%~2"=="" goto usage
 	rem It must be a digit between 1 and 8 to match the choices below
-	if "%2" GEQ "1" (
-		if "%2" LEQ "8" (
-			set _CHOICE=%2
-		) else (
-			goto usage
-		)
-	) else (
-		goto usage
-	)
-) else if not "%1" == "" (
-	goto usage
-)
+	echo %~2| findstr /R "^[1-8]$">nul|| goto usage
+	set "_CHOICE=%~2"
+) else goto usage
 
 :linux_check
 rem Check if run from Linux
@@ -44,7 +40,7 @@ if %ERRORLEVEL% == 0 (
 
 	"%TEMP%\ElevateMe.vbs"
 	del "%TEMP%\ElevateMe.vbs"
-	
+
 	exit /B
 )
 
@@ -107,7 +103,7 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game Steam installation directory...
 
-for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
 	echo No Steam installation directory found!
@@ -134,7 +130,7 @@ rem Check where the game is installed from the registry
 echo.
 echo Searching for the game GOG installation directory...
 
-for /F "tokens=2*" %%A in (' reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%" == "" (
 	echo No GOG installation directory found!
@@ -182,9 +178,9 @@ if defined _CHOICE (
 
 echo.
 
-if %ERRORLEVEL% == 1 call :DS1 & echo. & call :DS1LOA & goto end
-if %ERRORLEVEL% == 2 call :DS1 & goto end
-if %ERRORLEVEL% == 3 call :DS1LOA & goto end
+if %ERRORLEVEL% == 1 call :ds1 & echo. & call :ds1loa & goto end
+if %ERRORLEVEL% == 2 call :ds1 & goto end
+if %ERRORLEVEL% == 3 call :ds1loa & goto end
 if %ERRORLEVEL% == 4 goto junction
 if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
@@ -192,19 +188,15 @@ if %ERRORLEVEL% == 7 goto openzone
 if %ERRORLEVEL% == 8 goto gmax
 if %ERRORLEVEL% == 9 exit /B
 
-:DS1
+:ds1
 echo Adding registry entries for Dungeon Siege...
-
-REG ADD "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-
+reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 echo DONE
 exit /B
 
-:DS1LOA
+:ds1loa
 echo Adding registry entries for Dungeon Siege: Legends of Aranna...
-
-REG ADD "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-
+reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 echo DONE
 exit /B
 
@@ -257,12 +249,13 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege...
-REG DELETE "%_MS_DS%" /f %_REG_ARG% > nul
+
+reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1 
 echo DONE
 echo.
 
 echo Removing registry entries for Dungeon Siege: Legends of Aranna...
-REG DELETE "%_MS_LOA%" /f %_REG_ARG% > nul
+reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
 
 echo DONE
 goto end
@@ -314,19 +307,19 @@ goto end
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
 rem Store the beginning of the config file to a temp file
 :read_ini
-set CFG_FILE=%1
-set CFG_FILE_TEMP="%~1.tmp"
+set _CFG_FILE=%1
+set _CFG_FILE_TEMP="%~1.tmp"
 set TARGET_SECTION=multiplayer
 
-rem echo read_ini_CFG_FILE = %CFG_FILE%
-rem echo read_ini_CFG_FILE_TEMP = %CFG_FILE_TEMP%
+rem echo read_ini _CFG_FILE = %_CFG_FILE%
+rem echo read_ini _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 
-if exist %CFG_FILE_TEMP% del %CFG_FILE_TEMP%
+if exist %_CFG_FILE_TEMP% del %_CFG_FILE_TEMP%
 set "inSection=0"
 
 rem Read the config file line by line
 rem The | character after "eol=" is to fix a weird syntax error on Linux
-for /F "usebackq eol=| delims=" %%L in (%CFG_FILE%) do (
+for /F "usebackq eol=| delims=" %%L in (%_CFG_FILE%) do (
 	set "line=%%L"
 
 	rem Section detection logic
@@ -338,7 +331,7 @@ for /F "usebackq eol=| delims=" %%L in (%CFG_FILE%) do (
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !inSection! EQU 0 (
-		echo !line!>> %CFG_FILE_TEMP%
+		echo !line!>> %_CFG_FILE_TEMP%
 	) else (
 		exit /B 
 	)
@@ -348,26 +341,26 @@ exit /B
 
 rem Append the MP section to the temp file
 :append_mp_section
-set CFG_FILE=%1
-set CFG_FILE_TEMP="%~1.tmp"
+set _CFG_FILE=%1
+set _CFG_FILE_TEMP="%~1.tmp"
 
-rem echo append_mp_section_CFG_FILE = %CFG_FILE%
-rem echo append_mp_section_CFG_FILE_TEMP = %CFG_FILE_TEMP%
+rem echo append_mp_section _CFG_FILE = %_CFG_FILE%
+rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 
-echo.>> %CFG_FILE_TEMP%
-echo [multiplayer]>> %CFG_FILE_TEMP%
-echo gun_server = gz.exsurge.net>> %CFG_FILE_TEMP%
-echo gun_server_port = 2300>> %CFG_FILE_TEMP%
-echo news_server = gz.exsurge.net>> %CFG_FILE_TEMP%
-echo news_server_port = 2301>> %CFG_FILE_TEMP%
-echo news_server_file = news.txt>> %CFG_FILE_TEMP%
-echo autoupdate_server = gz.exsurge.net>> %CFG_FILE_TEMP%
-echo autoupdate_proxy = gz.exsurge.net>> %CFG_FILE_TEMP%
-echo.>> %CFG_FILE_TEMP%
-echo [debug]>> %CFG_FILE_TEMP%
+echo.>> %_CFG_FILE_TEMP%
+echo [multiplayer]>> %_CFG_FILE_TEMP%
+echo gun_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
+echo gun_server_port = 2300>> %_CFG_FILE_TEMP%
+echo news_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
+echo news_server_port = 2301>> %_CFG_FILE_TEMP%
+echo news_server_file = news.txt>> %_CFG_FILE_TEMP%
+echo autoupdate_server = gz.exsurge.net>> %_CFG_FILE_TEMP%
+echo autoupdate_proxy = gz.exsurge.net>> %_CFG_FILE_TEMP%
+echo.>> %_CFG_FILE_TEMP%
+echo [debug]>> %_CFG_FILE_TEMP%
 
 rem Overwrite the original config file
-move /Y %CFG_FILE_TEMP% %CFG_FILE% > nul
+move /Y %_CFG_FILE_TEMP% %_CFG_FILE% > nul
 
 exit /B
 

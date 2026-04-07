@@ -7,15 +7,16 @@ echo.
 
 :parse_args
 rem Check and validate arguments
-set _CHOICE=
-
 if "%~1"=="" goto linux_check
 if /I "%~1"=="-c" (
-	rem Second argument missing
-	if "%~2"=="" goto usage
 	rem It must be a digit between 1 and 6 to match the choices below
-	echo %~2| findstr /R "^[1-6]$">nul|| goto usage
-	set "_CHOICE=%~2"
+	if "%~2"=="1" set "_CHOICE=%~2"
+	if "%~2"=="2" set "_CHOICE=%~2"
+	if "%~2"=="3" set "_CHOICE=%~2"
+	if "%~2"=="4" set "_CHOICE=%~2"
+	if "%~2"=="5" set "_CHOICE=%~2"
+	if "%~2"=="6" set "_CHOICE=%~2"
+	if not defined _CHOICE goto usage
 ) else goto usage
 
 :linux_check

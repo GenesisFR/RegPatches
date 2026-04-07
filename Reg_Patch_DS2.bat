@@ -154,7 +154,7 @@ echo 1. Add registry entries for Dungeon Siege 2 and Dungeon Siege 2: Broken Wor
 echo 2. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
 echo 3. Add registry entries for Dungeon Siege 2: Broken World (needed for Elys DS2BW and OpenSpy)
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
-echo 5. Export registry entries to a REG file (useful on Linux)
+echo 5. Export registry entries to a REG file (to import them manually)
 echo 6. Remove registry entries for both games
 echo 7. Exit
 echo.
@@ -228,7 +228,7 @@ rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-st
 rem Double backslashes in the install directory path
 set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
 
-echo Exporting registry entries for Dungeon Siege 2...
+echo Exporting registry entries for Dungeon Siege 2 and Broken World...
 
 (
 	echo REGEDIT4
@@ -238,22 +238,14 @@ echo Exporting registry entries for Dungeon Siege 2...
 	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 	echo "PID"="0000-0000-0000-0000"
 	echo.
-) > %_REG_FILE%
-
-echo DONE
-echo.
-echo Exporting registry entries for Dungeon Siege 2: Broken World...
-
-(
 	echo [%_2K_BW_EXPORT%]
 	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 	echo "PID"="0000-0000-0000-0000"
 	echo.
-
 	echo [%_GPG_BW_EXPORT%]
 	echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-) >> %_REG_FILE%
+) > %_REG_FILE%
 
 echo DONE
 echo.

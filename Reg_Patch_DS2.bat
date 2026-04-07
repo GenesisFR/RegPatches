@@ -5,22 +5,18 @@ title Reg Patcher for Dungeon Siege 2 by Genesis (v1.52)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo.
 
-:argument_check
+:parse_args
 rem Check and validate arguments
-if "%1" == "-c" (
+set _CHOICE=
+
+if "%~1"=="" goto linux_check
+if /I "%~1"=="-c" (
+	rem Second argument missing
+	if "%~2"=="" goto usage
 	rem It must be a digit between 1 and 6 to match the choices below
-	if "%2" GEQ "1" (
-		if "%2" LEQ "6" (
-			set _CHOICE=%2
-		) else (
-			goto usage
-		)
-	) else (
-		goto usage
-	)
-) else if not "%1" == "" (
-	goto usage
-)
+	echo %~2| findstr /R "^[1-6]$">nul|| goto usage
+	set "_CHOICE=%~2"
+) else goto usage
 
 :linux_check
 rem Check if run from Linux
@@ -32,7 +28,7 @@ rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
 fsutil dirty query %SYSTEMDRIVE% > nul
 
-if %ERRORLEVEL%% == 0 (
+if %ERRORLEVEL% == 0 (
 	echo OK
 ) else (
 	echo ERROR: admin rights not detected.
@@ -44,7 +40,7 @@ if %ERRORLEVEL%% == 0 (
 
 	"%TEMP%\ElevateMe.vbs"
 	del "%TEMP%\ElevateMe.vbs"
-	
+
 	exit /B
 )
 
@@ -174,31 +170,31 @@ if defined _CHOICE (
 
 echo.
 
-if %ERRORLEVEL% == 1 call :DS2 & echo. & call :DS2BW & goto end
-if %ERRORLEVEL% == 2 call :DS2 & goto end
-if %ERRORLEVEL% == 3 call :DS2BW & goto end
+if %ERRORLEVEL% == 1 call :ds2 & echo. & call :ds2bw & goto end
+if %ERRORLEVEL% == 2 call :ds2 & goto end
+if %ERRORLEVEL% == 3 call :ds2bw & goto end
 if %ERRORLEVEL% == 4 goto junction
 if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
 if %ERRORLEVEL% == 7 exit /B
 
-:DS2
+:ds2
 echo Adding registry entries for Dungeon Siege 2...
 
-REG ADD "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG% > nul
+reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG% > nul
 
 echo DONE
 exit /B
 
-:DS2BW
+:ds2bw
 echo Adding registry entries for Dungeon Siege 2: Broken World...
 
-REG ADD "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-REG ADD "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG% > nul
-REG ADD "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG% > nul
+reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 echo DONE
 exit /B
@@ -260,13 +256,14 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege 2...
-REG DELETE "%_MS_DS2%" /f %_REG_ARG% > nul
+
+reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
 echo DONE
 echo.
 
 echo Removing registry entries for Dungeon Siege 2: Broken World...
-REG DELETE "%_2K_BW%" /f %_REG_ARG% > nul
-REG DELETE "%_GPG_BW%" /f %_REG_ARG% > nul
+reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
+reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
 
 echo DONE
 goto end

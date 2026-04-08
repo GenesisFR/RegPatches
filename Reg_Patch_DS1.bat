@@ -269,8 +269,11 @@ if exist "%_CFG_FILE_DS%" (
 	set "_CFG_FILE_FOUND=1"
 
 	setlocal EnableDelayedExpansion
-	call :read_ini "%_CFG_FILE_DS%"
+	call :edit_ini "%_CFG_FILE_DS%"
 	setlocal DisableDelayedExpansion
+
+	rem Overwrite the original config file
+	move /Y "%_CFG_FILE_DS%.tmp" "%_CFG_FILE_DS%" > nul
 )
 
 rem Update the LOA config file if it exists
@@ -278,8 +281,11 @@ if exist "%_CFG_FILE_LOA%" (
 	set "_CFG_FILE_FOUND=1"
 
 	setlocal EnableDelayedExpansion
-	call :read_ini "%_CFG_FILE_LOA%"
+	call :edit_ini "%_CFG_FILE_LOA%"
 	setlocal DisableDelayedExpansion
+
+	rem Overwrite the original config file
+	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 
 if %_CFG_FILE_FOUND% EQU 0 (
@@ -290,7 +296,7 @@ if %_CFG_FILE_FOUND% EQU 0 (
 
 goto end
 
-:read_ini
+:edit_ini
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
 rem Store the beginning of the config file to a temp file
 set "_CFG_FILE=%~1"
@@ -308,13 +314,13 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 	rem Section detection logic
 	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
 		for /F "delims=[]" %%S in ("!_LINE!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" ( set "_IN_SECTION=1" )
+			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
 		)
 	)
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !_IN_SECTION! EQU 0 (
-		if not "!_LINE!" == "" ( echo !_LINE!>> "%_CFG_FILE_TEMP%" )
+		if not "!_LINE!" == "" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
 	) else (
 		rem Append the MP section to the temp file
 		(
@@ -330,9 +336,6 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 			echo:
 			echo [debug]
 		) >> "%_CFG_FILE_TEMP%"
-
-		rem Overwrite the original config file
-		move /Y "%_CFG_FILE_TEMP%" "%_CFG_FILE%" > nul
 
 		exit /B
 	)

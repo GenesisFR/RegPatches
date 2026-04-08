@@ -3,7 +3,7 @@ setlocal
 
 title Reg Patcher for Dungeon Siege 1 by Genesis (v1.53)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
-echo.
+echo:
 
 :parse_args
 rem Check and validate arguments
@@ -35,7 +35,7 @@ if %ERRORLEVEL% == 0 (
 	echo OK
 ) else (
 	echo ERROR: admin rights not detected.
-	echo.
+	echo:
 	echo The script will now restart as admin.
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
@@ -47,7 +47,7 @@ if %ERRORLEVEL% == 0 (
 	exit /B
 )
 
-echo.
+echo:
 
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
@@ -86,7 +86,7 @@ if %_OS_BITNESS% == 32 (
 :exe_check
 rem Check for game executables in the current directory
 echo Current directory: %CD%
-echo.
+echo:
 echo Checking for the game executable...
 
 if exist DungeonSiege.exe (
@@ -103,7 +103,7 @@ if exist DungeonSiege.exe (
 
 :steam_install_detection
 rem Check where the game is installed from the registry
-echo.
+echo:
 echo Searching for the game Steam installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
@@ -130,7 +130,7 @@ if "%_INSTALL_LOCATION%" == "" (
 
 :gog_install_detection
 rem Check where the game is installed from the registry
-echo.
+echo:
 echo Searching for the game GOG installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
@@ -158,9 +158,9 @@ if "%_INSTALL_LOCATION%" == "" (
 
 :menu
 rem Selection menu
-echo.
+echo:
 echo Please make a selection:
-echo.
+echo:
 echo 1. Add registry entries for Dungeon Siege and Legends of Aranna
 echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Tool Kit)
 echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
@@ -170,7 +170,7 @@ echo 6. Remove registry entries for both games
 echo 7. Redirect ZoneMatch to OpenZone (needed to play online through ZoneMatch)
 echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
 echo 9. Exit
-echo.
+echo:
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
@@ -179,9 +179,9 @@ if defined _CHOICE (
 	choice /C:123456789 /N
 )
 
-echo.
+echo:
 
-if %ERRORLEVEL% == 1 call :ds1 & echo. & call :ds1loa & goto end
+if %ERRORLEVEL% == 1 call :ds1 & echo: & call :ds1loa & goto end
 if %ERRORLEVEL% == 2 call :ds1 & goto end
 if %ERRORLEVEL% == 3 call :ds1loa & goto end
 if %ERRORLEVEL% == 4 goto junction
@@ -212,14 +212,14 @@ if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
 if %ERRORLEVEL% == 0 (
-	echo.
+	echo:
 	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-	echo.
+	echo:
 	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
 	echo It can safely be renamed or deleted.
 )
 
-echo.
+echo:
 echo DONE
 goto end
 
@@ -232,16 +232,16 @@ echo Exporting registry entries for Dungeon Siege and Legends of Aranna...
 
 (
 	echo REGEDIT4
-	echo.
+	echo:
 	echo [%_MS_DS_EXPORT%]
 	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-	echo.
+	echo:
 	echo [%_MS_LOA_EXPORT%]
 	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 ) > %_REG_FILE%
 
 echo DONE
-echo.
+echo:
 echo A new file called "%_REG_FILE%" has been created in the current directory.
 
 goto end
@@ -251,7 +251,7 @@ echo Removing registry entries for Dungeon Siege...
 
 reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1 
 echo DONE
-echo.
+echo:
 
 echo Removing registry entries for Dungeon Siege: Legends of Aranna...
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
@@ -331,7 +331,7 @@ for /F "usebackq eol=| delims=" %%L in (%_CFG_FILE%) do (
 	rem Write the current line to the temp file until we reach the MP section
 	if !inSection! EQU 0 (
 		if "!line!" == "" (
-			echo.>> %_CFG_FILE_TEMP%
+			echo:>> %_CFG_FILE_TEMP%
 		) else (
 			echo !line!>> %_CFG_FILE_TEMP%
 		)
@@ -359,7 +359,7 @@ rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 	echo news_server_file = news.txt
 	echo autoupdate_server = gz.exsurge.net
 	echo autoupdate_proxy = gz.exsurge.net
-	echo.
+	echo:
 	echo [debug]
 ) >> %_CFG_FILE_TEMP%
 
@@ -373,12 +373,12 @@ echo Checking for the Gmax executable...
 
 if exist gmax.exe (
 	echo OK
-	echo.
+	echo:
 	echo Adding the environment variable for Gmax...
 	setx GMAXLOC "%CD%" > nul
 ) else (
 	echo gmax.exe not found in the current directory!
-	echo.
+	echo:
 	set _CHOICE=
 	pause
 	cls
@@ -390,10 +390,10 @@ goto end
 
 :usage
 echo Usage:
-echo.
+echo:
 echo %~0 -c X (where X is a number between 1 and 8)
 
 :end
-echo.
+echo:
 pause
 endlocal

@@ -271,8 +271,6 @@ if exist "%_CFG_FILE_DS%" (
 	setlocal EnableDelayedExpansion
 	call :read_ini "%_CFG_FILE_DS%"
 	setlocal DisableDelayedExpansion
-
-	call :append_mp_section "%_CFG_FILE_DS%"
 )
 
 rem Update the LOA config file if it exists
@@ -282,8 +280,6 @@ if exist "%_CFG_FILE_LOA%" (
 	setlocal EnableDelayedExpansion
 	call :read_ini "%_CFG_FILE_LOA%"
 	setlocal DisableDelayedExpansion
-
-	call :append_mp_section "%_CFG_FILE_LOA%"
 )
 
 if %_CFG_FILE_FOUND% EQU 0 (
@@ -294,9 +290,9 @@ if %_CFG_FILE_FOUND% EQU 0 (
 
 goto end
 
+:read_ini
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
 rem Store the beginning of the config file to a temp file
-:read_ini
 set "_CFG_FILE=%~1"
 set "_CFG_FILE_TEMP=%~1.tmp"
 set "_TARGET_SECTION=multiplayer"
@@ -318,41 +314,29 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !_IN_SECTION! EQU 0 (
-		if "!_LINE!" == "" (
-			echo:>> "%_CFG_FILE_TEMP%"
-		) else (
-			echo !line!>> "%_CFG_FILE_TEMP%"
-		)
+		if not "!_LINE!" == "" ( echo !_LINE!>> "%_CFG_FILE_TEMP%" )
 	) else (
+		rem Append the MP section to the temp file
+		(
+			echo:
+			echo [multiplayer]
+			echo gun_server = gz.exsurge.net
+			echo gun_server_port = 2300
+			echo news_server = gz.exsurge.net
+			echo news_server_port = 2301
+			echo news_server_file = news.txt
+			echo autoupdate_server = gz.exsurge.net
+			echo autoupdate_proxy = gz.exsurge.net
+			echo:
+			echo [debug]
+		) >> "%_CFG_FILE_TEMP%"
+
+		rem Overwrite the original config file
+		move /Y "%_CFG_FILE_TEMP%" "%_CFG_FILE%" > nul
+
 		exit /B
 	)
 )
-
-exit /B
-
-rem Append the MP section to the temp file
-:append_mp_section
-set "_CFG_FILE=%~1"
-set "_CFG_FILE_TEMP=%~1.tmp"
-
-rem echo append_mp_section _CFG_FILE = %_CFG_FILE%
-rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
-
-(
-	echo [multiplayer]
-	echo gun_server = gz.exsurge.net
-	echo gun_server_port = 2300
-	echo news_server = gz.exsurge.net
-	echo news_server_port = 2301
-	echo news_server_file = news.txt
-	echo autoupdate_server = gz.exsurge.net
-	echo autoupdate_proxy = gz.exsurge.net
-	echo:
-	echo [debug]
-) >> "%_CFG_FILE_TEMP%"
-
-rem Overwrite the original config file
-move /Y "%_CFG_FILE_TEMP%" "%_CFG_FILE%" > nul
 
 exit /B
 

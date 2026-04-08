@@ -55,32 +55,32 @@ rem Correct the current directory when a script is run as admin
 cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
-set _OS_BITNESS=64
+set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
-		set _OS_BITNESS=32
+		set "_OS_BITNESS=32"
 		set "_PROGRAM_FILES=%PROGRAMFILES%"
 	)
 )
 
 rem Shortcuts for registry stuff
-set _MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege
-set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0
-set _MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna
-set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
-set _REG_ARG=/reg:32
-set _REG_FILE=%~n0.reg
-set _REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626
-set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190
+set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"
+set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0"
+set "_MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna"
+set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
+set "_REG_ARG=/reg:32"
+set "_REG_FILE=%~n0.reg"
+set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
+set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-	set _MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0
-	set _MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0
-	set _REG_ARG=
-	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626
+	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
+	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
+	set "_REG_ARG="
+	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
 )
 
 :exe_check
@@ -206,7 +206,7 @@ exit /B
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%A in ("%_INSTALL_LOCATION%") do set _INSTALL_DIRECTORY_NAME=%%~nxA
+for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
 
 if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
@@ -226,7 +226,7 @@ goto end
 :export
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
-set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
+set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
 
 echo Exporting registry entries for Dungeon Siege and Legends of Aranna...
 
@@ -247,15 +247,9 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 goto end
 
 :cleanup
-echo Removing registry entries for Dungeon Siege...
-
+echo Removing registry entries for Dungeon Siege and Legends of Aranna...
 reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1 
-echo DONE
-echo:
-
-echo Removing registry entries for Dungeon Siege: Legends of Aranna...
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
-
 echo DONE
 goto end
 
@@ -264,18 +258,15 @@ echo Redirecting the ZoneMatch server to OpenZone...
 
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
-for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v "Personal" 2^>nul') do set _MY_DOCUMENTS=%%B
+for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%B"
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
-set _CFG_FILE_FOUND=0
-
-rem echo _CFG_FILE_DS = %_CFG_FILE_DS%
-rem echo _CFG_FILE_LOA = %_CFG_FILE_LOA%
+set "_CFG_FILE_FOUND=0"
 
 rem Update the DS config file if it exists
 if exist "%_CFG_FILE_DS%" (
-	set _CFG_FILE_FOUND=1
+	set "_CFG_FILE_FOUND=1"
 
 	setlocal EnableDelayedExpansion
 	call :read_ini "%_CFG_FILE_DS%"
@@ -286,7 +277,7 @@ if exist "%_CFG_FILE_DS%" (
 
 rem Update the LOA config file if it exists
 if exist "%_CFG_FILE_LOA%" (
-	set _CFG_FILE_FOUND=1
+	set "_CFG_FILE_FOUND=1"
 
 	setlocal EnableDelayedExpansion
 	call :read_ini "%_CFG_FILE_LOA%"
@@ -308,29 +299,26 @@ rem Store the beginning of the config file to a temp file
 :read_ini
 set "_CFG_FILE=%~1"
 set "_CFG_FILE_TEMP=%~1.tmp"
-set _TARGET_SECTION=multiplayer
-
-rem echo read_ini _CFG_FILE = %_CFG_FILE%
-rem echo read_ini _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
+set "_TARGET_SECTION=multiplayer"
 
 if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
-set "inSection=0"
+set "_IN_SECTION=0"
 
 rem Read the config file line by line
 rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the # character 
 for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
-	set "line=%%L"
+	set "_LINE=%%L"
 
 	rem Section detection logic
-	if "!line:~0,1!"=="[" if "!line:~-1!"=="]" (
-		for /F "delims=[]" %%S in ("!line!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" (set "inSection=1")
+	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
+		for /F "delims=[]" %%S in ("!_LINE!") do (
+			if /I "%%S"=="%_TARGET_SECTION%" ( set "_IN_SECTION=1" )
 		)
 	)
 
 	rem Write the current line to the temp file until we reach the MP section
-	if !inSection! EQU 0 (
-		if "!line!" == "" (
+	if !_IN_SECTION! EQU 0 (
+		if "!_LINE!" == "" (
 			echo:>> "%_CFG_FILE_TEMP%"
 		) else (
 			echo !line!>> "%_CFG_FILE_TEMP%"
@@ -379,7 +367,7 @@ if exist gmax.exe (
 ) else (
 	echo gmax.exe not found in the current directory!
 	echo:
-	set _CHOICE=
+	set "_CHOICE="
 	pause
 	cls
 	goto menu

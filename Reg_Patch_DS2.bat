@@ -53,35 +53,35 @@ rem Correct current directory when a script is run as admin
 @cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
-set _OS_BITNESS=64
+set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
-		set _OS_BITNESS=32
+		set "_OS_BITNESS=32"
 		set "_PROGRAM_FILES=%PROGRAMFILES%"
 	)
 )
 
 rem Shortcuts for registry stuff
-set _2K_BW=HKLM\Software\2K Games\Dungeon Siege 2 Broken World
-set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\2K Games\Dungeon Siege 2 Broken World
-set _GPG_BW=HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World
-set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
-set _MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2
-set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege2
-set _REG_ARG=/reg:32
-set _REG_FILE=%~n0.reg
-set _REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902
-set _REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200
+set "_2K_BW=HKLM\Software\2K Games\Dungeon Siege 2 Broken World"
+set "_2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\2K Games\Dungeon Siege 2 Broken World"
+set "_GPG_BW=HKLM\Software\Gas Powered Games\Dungeon Siege 2 Broken World"
+set "_GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000"
+set "_MS_DS2=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege2"
+set "_MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege2"
+set "_REG_ARG=/reg:32"
+set "_REG_FILE=%~n0.reg"
+set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
+set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS% == 32 (
-	set _2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World
-	set _GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000
-	set _MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2
-	set _REG_ARG=
-	set _REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902
+	set "_2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World"
+	set "_GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000"
+	set "_MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2"
+	set "_REG_ARG="
+	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902"
 )
 
 :exe_check
@@ -207,7 +207,7 @@ exit /B
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%a in ("%_INSTALL_LOCATION%") do set _INSTALL_DIRECTORY_NAME=%%~nxa
+for %%a in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxa"
 
 if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
@@ -227,7 +227,7 @@ goto end
 :export
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
-set _INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%
+set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
 
 echo Exporting registry entries for Dungeon Siege 2 and Broken World...
 
@@ -255,13 +255,9 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 goto end
 
 :cleanup
-echo Removing registry entries for Dungeon Siege 2...
+echo Removing registry entries for Dungeon Siege 2 and Broken World...
 
 reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
-echo DONE
-echo:
-
-echo Removing registry entries for Dungeon Siege 2: Broken World...
 reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
 

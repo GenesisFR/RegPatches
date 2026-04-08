@@ -306,34 +306,34 @@ goto end
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
 rem Store the beginning of the config file to a temp file
 :read_ini
-set _CFG_FILE=%1
-set _CFG_FILE_TEMP="%~1.tmp"
-set TARGET_SECTION=multiplayer
+set "_CFG_FILE=%~1"
+set "_CFG_FILE_TEMP=%~1.tmp"
+set _TARGET_SECTION=multiplayer
 
 rem echo read_ini _CFG_FILE = %_CFG_FILE%
 rem echo read_ini _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 
-if exist %_CFG_FILE_TEMP% del %_CFG_FILE_TEMP%
+if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
 set "inSection=0"
 
 rem Read the config file line by line
-rem The | character after "eol=" is to fix a weird syntax error on Linux
-for /F "usebackq eol=| delims=" %%L in (%_CFG_FILE%) do (
+rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the # character 
+for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 	set "line=%%L"
 
 	rem Section detection logic
 	if "!line:~0,1!"=="[" if "!line:~-1!"=="]" (
 		for /F "delims=[]" %%S in ("!line!") do (
-			if /I "%%S"=="%TARGET_SECTION%" (set "inSection=1")
+			if /I "%%S"=="%_TARGET_SECTION%" (set "inSection=1")
 		)
 	)
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !inSection! EQU 0 (
 		if "!line!" == "" (
-			echo:>> %_CFG_FILE_TEMP%
+			echo:>> "%_CFG_FILE_TEMP%"
 		) else (
-			echo !line!>> %_CFG_FILE_TEMP%
+			echo !line!>> "%_CFG_FILE_TEMP%"
 		)
 	) else (
 		exit /B
@@ -344,8 +344,8 @@ exit /B
 
 rem Append the MP section to the temp file
 :append_mp_section
-set _CFG_FILE=%1
-set _CFG_FILE_TEMP="%~1.tmp"
+set "_CFG_FILE=%~1"
+set "_CFG_FILE_TEMP=%~1.tmp"
 
 rem echo append_mp_section _CFG_FILE = %_CFG_FILE%
 rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
@@ -361,10 +361,10 @@ rem echo append_mp_section _CFG_FILE_TEMP = %_CFG_FILE_TEMP%
 	echo autoupdate_proxy = gz.exsurge.net
 	echo:
 	echo [debug]
-) >> %_CFG_FILE_TEMP%
+) >> "%_CFG_FILE_TEMP%"
 
 rem Overwrite the original config file
-move /Y %_CFG_FILE_TEMP% %_CFG_FILE% > nul
+move /Y "%_CFG_FILE_TEMP%" "%_CFG_FILE%" > nul
 
 exit /B
 

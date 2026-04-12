@@ -235,22 +235,12 @@ echo Adding registry entries for Dungeon Siege 2: Broken World...
 echo DONE
 exit /B
 
-:junction
-rem https://stackoverflow.com/a/8071683
-rem Get the install directory name
-for %%a in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxa"
-
-if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
-mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
-
-if %ERRORLEVEL%==0 (
-	echo:
-	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-	echo:
-	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-	echo It can safely be renamed or deleted.
-)
-
+:cleanup
+echo Removing registry entries for Dungeon Siege 2 and Broken World...
+reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
+reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
+reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
+echo DONE
 goto end
 
 :export
@@ -283,12 +273,22 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 
 goto end
 
-:cleanup
-echo Removing registry entries for Dungeon Siege 2 and Broken World...
-reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
-echo DONE
+:junction
+rem https://stackoverflow.com/a/8071683
+rem Get the install directory name
+for %%a in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxa"
+
+if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
+mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
+
+if %ERRORLEVEL%==0 (
+	echo:
+	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
+	echo:
+	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+	echo It can safely be renamed or deleted.
+)
+
 goto end
 
 :controlled

@@ -69,6 +69,9 @@ if %PROCESSOR_ARCHITECTURE% == x86 (
 	)
 )
 
+rem Store the Windows version
+for /f "tokens=4 delims= " %%i in ('ver') do set _WINVER=%%i
+
 rem Shortcuts for registry stuff
 set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"
 set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0"
@@ -259,6 +262,26 @@ goto end
 
 :openzone
 echo Redirecting the ZoneMatch server to OpenZone...
+
+rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands further below won't work)
+if not defined _LINUX (
+	if %_WINVER% GEQ 10 (
+		rem Check the registry if it's already been whitelisted
+		for /f "tokens=2*" %%A in ('reg query "HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications" /v "%SystemRoot%\system32\cmd.exe" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
+
+		if not defined _IS_CMD_ALLOWED (
+			echo "%SystemRoot%\system32\cmd.exe" is being added to the list of allowed applications in Controlled Folder Access.
+
+			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
+			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
+
+			echo DONE
+			echo:
+			echo Please run the reg patch again for changes to take effect.
+			goto end
+		)
+	)
+)
 
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents

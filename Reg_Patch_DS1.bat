@@ -272,7 +272,8 @@ if exist "%_CFG_FILE_DS%" (
 	call :edit_ini "%_CFG_FILE_DS%"
 	setlocal DisableDelayedExpansion
 
-	rem Overwrite the original config file
+	rem Overwrite the original config file (even if it was read-only)
+	attrib -R "%_CFG_FILE_DS%"
 	move /Y "%_CFG_FILE_DS%.tmp" "%_CFG_FILE_DS%" > nul
 )
 
@@ -284,7 +285,8 @@ if exist "%_CFG_FILE_LOA%" (
 	call :edit_ini "%_CFG_FILE_LOA%"
 	setlocal DisableDelayedExpansion
 
-	rem Overwrite the original config file
+	rem Overwrite the original config file (even if it was read-only)
+	attrib -R "%_CFG_FILE_LOA%"
 	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 

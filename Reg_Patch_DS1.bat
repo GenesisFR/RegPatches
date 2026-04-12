@@ -9,7 +9,7 @@ echo:
 rem Check and validate arguments
 if "%~1"=="" goto linux_check
 if /I "%~1"=="-c" (
-	rem It must be a digit between 1 and 8 to match the choices below
+	rem It must be a digit between 1 and 9 to match the choices below
 	if "%~2"=="1" set "_CHOICE=%~2"
 	if "%~2"=="2" set "_CHOICE=%~2"
 	if "%~2"=="3" set "_CHOICE=%~2"
@@ -18,6 +18,7 @@ if /I "%~1"=="-c" (
 	if "%~2"=="6" set "_CHOICE=%~2"
 	if "%~2"=="7" set "_CHOICE=%~2"
 	if "%~2"=="8" set "_CHOICE=%~2"
+	if "%~2"=="9" set "_CHOICE=%~2"
 	if not defined _CHOICE goto usage
 ) else goto usage
 
@@ -33,7 +34,7 @@ if %ERRORLEVEL% == 1 (
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
-fsutil dirty query %SYSTEMDRIVE% > nul
+fsutil dirty query %SystemDrive% > nul
 
 if %ERRORLEVEL% == 0 (
 	echo OK
@@ -59,13 +60,14 @@ rem Correct the current directory when a script is run as admin
 cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
+rem Check if we're on a 32-bit system
 set "_OS_BITNESS=64"
-set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
+set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
 		set "_OS_BITNESS=32"
-		set "_PROGRAM_FILES=%PROGRAMFILES%"
+		set "_PROGRAM_FILES=%ProgramFiles%"
 	)
 )
 
@@ -176,14 +178,15 @@ echo 5. Export registry entries to a REG file (to import them manually)
 echo 6. Remove registry entries for both games
 echo 7. Redirect ZoneMatch to OpenZone (needed to play online through ZoneMatch)
 echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
-echo 9. Exit
+echo 9. Add the game executable(s) to the list of allowed applications in Controlled Folder Access (useful on Windows 10/11)
+echo 0. Exit
 echo:
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
 	choice /C:123456789 /N /T 0 /D %_CHOICE%
 ) else (
-	choice /C:123456789 /N
+	choice /C:1234567890 /N
 )
 
 echo:
@@ -196,7 +199,8 @@ if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
 if %ERRORLEVEL% == 7 goto openzone
 if %ERRORLEVEL% == 8 goto gmax
-if %ERRORLEVEL% == 9 exit /B
+if %ERRORLEVEL% == 9 goto controlled
+if %ERRORLEVEL% == 0 exit /B
 
 :ds1
 echo Adding registry entries for Dungeon Siege...
@@ -255,7 +259,7 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege and Legends of Aranna...
-reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1 
+reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
 echo DONE
 goto end
@@ -270,7 +274,7 @@ if not defined _LINUX (
 		for /f "tokens=2*" %%A in ('reg query "HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications" /v "%SystemRoot%\system32\cmd.exe" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
 		if not defined _IS_CMD_ALLOWED (
-			echo "%SystemRoot%\system32\cmd.exe" is being added to the list of allowed applications in Controlled Folder Access.
+			echo "%SystemRoot%\system32\cmd.exe" is going to be added to the list of allowed applications in Controlled Folder Access.
 
 			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
 			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
@@ -317,7 +321,7 @@ if exist "%_CFG_FILE_LOA%" (
 	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 
-if %_CFG_FILE_FOUND% EQU 0 (
+if %_CFG_FILE_FOUND% equ 0 (
 	echo No config file found! Make sure to run the game at least once to generate it.
 ) else (
 	echo DONE
@@ -336,7 +340,7 @@ if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
 set "_IN_SECTION=0"
 
 rem Read the config file line by line
-rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the # character 
+rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the # character that's usually unused
 for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 	set "_LINE=%%L"
 
@@ -348,7 +352,7 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 	)
 
 	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION! EQU 0 (
+	if !_IN_SECTION! equ 0 (
 		if not "!_LINE!" == "" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
 	) else (
 		rem Append the MP section to the temp file
@@ -392,10 +396,42 @@ if exist gmax.exe (
 echo DONE
 goto end
 
+:controlled
+echo Adding the game executable(s) to the Controlled Folder Access exclusion list...
+
+if not defined _LINUX (
+	if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+		echo Adding DSLOA.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+	)
+
+	if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
+		echo Adding DSLOAMod.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+	)
+
+	if exist "%_INSTALL_LOCATION%\DSMod.exe" (
+		echo Adding DSMod.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+	)
+
+	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+		echo Adding DungeonSiege.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+	)
+)
+
+echo DONE
+goto end
+
 :usage
 echo Usage:
 echo:
-echo %~0 -c X (where X is a number between 1 and 8)
+echo %~0 -c X (where X is a number between 1 and 9)
 
 :end
 echo:

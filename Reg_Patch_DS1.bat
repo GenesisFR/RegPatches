@@ -78,7 +78,11 @@ if %PROCESSOR_ARCHITECTURE%==x86 (
 )
 
 rem Store the Windows version
-for /f "tokens=4 delims= " %%i in ('ver') do set _WINVER=%%i
+if not defined _LINUX (
+	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
+) else (
+	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
+)
 
 rem Shortcuts for registry stuff
 set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"

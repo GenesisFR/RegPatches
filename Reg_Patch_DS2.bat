@@ -8,7 +8,7 @@ echo:
 :linux_check
 rem Check if run from Linux
 fsutil | find "dirty" > nul
-if %ERRORLEVEL% == 1 set "_LINUX=1"
+if %ERRORLEVEL%==1 set "_LINUX=1"
 
 :parse_args
 rem Check and validate arguments
@@ -40,7 +40,7 @@ rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
 fsutil dirty query %SystemDrive% > nul
 
-if %ERRORLEVEL% == 0 (
+if %ERRORLEVEL%==0 (
 	echo OK
 ) else (
 	echo ERROR: admin rights not detected.
@@ -67,7 +67,7 @@ rem https://ss64.com/nt/syntax-64bit.html
 set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
-if %PROCESSOR_ARCHITECTURE% == x86 (
+if %PROCESSOR_ARCHITECTURE%==x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
 		set "_OS_BITNESS=32"
 		set "_PROGRAM_FILES=%ProgramFiles%"
@@ -87,7 +87,7 @@ set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
-if %_OS_BITNESS% == 32 (
+if %_OS_BITNESS%==32 (
 	set "_2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\2K Games\Dungeon Siege 2 Broken World"
 	set "_GPG_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Gas Powered Games\Dungeon Siege 2 Broken World\1.00.0000"
 	set "_MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2"
@@ -116,7 +116,7 @@ echo Searching for the game Steam installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
-if "%_INSTALL_LOCATION%" == "" (
+if "%_INSTALL_LOCATION%"=="" (
 	echo No Steam installation directory found!
 ) else (
 	echo Steam installation directory found: %_INSTALL_LOCATION%
@@ -139,7 +139,7 @@ echo Searching for the game GOG installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
-if "%_INSTALL_LOCATION%" == "" (
+if "%_INSTALL_LOCATION%"=="" (
 	echo No GOG installation directory found!
 	goto end
 ) else (
@@ -197,17 +197,17 @@ if not defined _LINUX (
 
 echo:
 
-if %ERRORLEVEL% == 1 call :ds2 & echo: & call :ds2bw & goto end
-if %ERRORLEVEL% == 2 call :ds2 & goto end
-if %ERRORLEVEL% == 3 call :ds2bw & goto end
-if %ERRORLEVEL% == 4 goto cleanup
-if %ERRORLEVEL% == 5 goto export
+if %ERRORLEVEL%==1 call :ds2 & echo: & call :ds2bw & goto end
+if %ERRORLEVEL%==2 call :ds2 & goto end
+if %ERRORLEVEL%==3 call :ds2bw & goto end
+if %ERRORLEVEL%==4 goto cleanup
+if %ERRORLEVEL%==5 goto export
 if not defined _LINUX (
-	if %ERRORLEVEL% == 6 goto junction
-	if %ERRORLEVEL% == 7 goto controlled
-	if %ERRORLEVEL% == 8 exit /B
+	if %ERRORLEVEL%==6 goto junction
+	if %ERRORLEVEL%==7 goto controlled
+	if %ERRORLEVEL%==8 exit /B
 ) else (
-	if %ERRORLEVEL% == 6 exit /B
+	if %ERRORLEVEL%==6 exit /B
 )
 
 :ds2
@@ -243,7 +243,7 @@ for %%a in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxa"
 if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
-if %ERRORLEVEL% == 0 (
+if %ERRORLEVEL%==0 (
 	echo:
 	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
 	echo:
@@ -251,8 +251,6 @@ if %ERRORLEVEL% == 0 (
 	echo It can safely be renamed or deleted.
 )
 
-echo:
-echo DONE
 goto end
 
 :export

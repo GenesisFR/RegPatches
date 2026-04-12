@@ -9,13 +9,14 @@ echo:
 rem Check and validate arguments
 if "%~1"=="" goto linux_check
 if /I "%~1"=="-c" (
-	rem It must be a digit between 1 and 6 to match the choices below
+	rem It must be a digit between 1 and 7 to match the choices below
 	if "%~2"=="1" set "_CHOICE=%~2"
 	if "%~2"=="2" set "_CHOICE=%~2"
 	if "%~2"=="3" set "_CHOICE=%~2"
 	if "%~2"=="4" set "_CHOICE=%~2"
 	if "%~2"=="5" set "_CHOICE=%~2"
 	if "%~2"=="6" set "_CHOICE=%~2"
+	if "%~2"=="7" set "_CHOICE=%~2"
 	if not defined _CHOICE goto usage
 ) else goto usage
 
@@ -31,7 +32,7 @@ if %ERRORLEVEL% == 1 (
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
-fsutil dirty query %SYSTEMDRIVE% > nul
+fsutil dirty query %SystemDrive% > nul
 
 if %ERRORLEVEL% == 0 (
 	echo OK
@@ -53,17 +54,17 @@ echo:
 
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
-rem Correct current directory when a script is run as admin
-@cd /d "%~dp0"
+rem Correct the current directory when a script is run as admin
+cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
 set "_OS_BITNESS=64"
-set "_PROGRAM_FILES=%PROGRAMFILES(X86)%"
+set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
 if %PROCESSOR_ARCHITECTURE% == x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
 		set "_OS_BITNESS=32"
-		set "_PROGRAM_FILES=%PROGRAMFILES%"
+		set "_PROGRAM_FILES=%ProgramFiles%"
 	)
 )
 
@@ -161,7 +162,8 @@ echo 3. Add registry entries for Dungeon Siege 2: Broken World (needed for Elys 
 echo 4. Create a directory junction in Program Files (useful for GameRanger)
 echo 5. Export registry entries to a REG file (to import them manually)
 echo 6. Remove registry entries for both games
-echo 7. Exit
+echo 7. Add the game executable(s) to the list of allowed applications in Controlled Folder Access (useful on Windows 10/11)
+echo 8. Exit
 echo:
 echo Note: if you're not sure which option to select, just press 1.
 echo:
@@ -170,7 +172,7 @@ rem Automatically make a selection if arguments were passed
 if defined _CHOICE (
 	choice /C:1234567 /N /T 0 /D %_CHOICE%
 ) else (
-	choice /C:1234567 /N
+	choice /C:12345678 /N
 )
 
 echo:
@@ -181,7 +183,8 @@ if %ERRORLEVEL% == 3 call :ds2bw & goto end
 if %ERRORLEVEL% == 4 goto junction
 if %ERRORLEVEL% == 5 goto export
 if %ERRORLEVEL% == 6 goto cleanup
-if %ERRORLEVEL% == 7 exit /B
+if %ERRORLEVEL% == 7 goto controlled
+if %ERRORLEVEL% == 8 exit /B
 
 :ds2
 echo Adding registry entries for Dungeon Siege 2...
@@ -260,10 +263,28 @@ goto end
 
 :cleanup
 echo Removing registry entries for Dungeon Siege 2 and Broken World...
-
 reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
+echo DONE
+goto end
+
+:controlled
+echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
+
+if not defined WINEPREFIX (
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+		echo Adding DungeonSiege2.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+	)
+
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
+		echo Adding DungeonSiege2Mod.exe...
+		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+	)
+)
 
 echo DONE
 goto end
@@ -271,7 +292,7 @@ goto end
 :usage
 echo Usage:
 echo:
-echo %~0 -c X (where X is a number between 1 and 6)
+echo %~0 -c X (where X is a number between 1 and 7)
 
 :end
 echo:

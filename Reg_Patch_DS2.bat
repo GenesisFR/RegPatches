@@ -20,8 +20,12 @@ if /I "%~1"=="-c" (
 ) else goto usage
 
 :linux_check
-rem Check if run from Linux
-if defined WINEPREFIX goto init
+rem Check if run from Linux and skip the admin check, otherwise we'll be stuck in an endless loop
+fsutil | find "dirty" > nul
+if %ERRORLEVEL% == 1 (
+	set "_LINUX=1"
+	goto init
+)
 
 :admin_check
 rem https://ss64.com/vb/syntax-elevate.html

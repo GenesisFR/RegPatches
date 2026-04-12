@@ -385,6 +385,24 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 	)
 )
 
+rem No MP section was found
+if !_IN_SECTION! equ 0 (
+	rem Append the MP section to the temp file
+	(
+		echo:
+		echo [multiplayer]
+		echo gun_server = gz.exsurge.net
+		echo gun_server_port = 2300
+		echo news_server = gz.exsurge.net
+		echo news_server_port = 2301
+		echo news_server_file = news.txt
+		echo autoupdate_server = gz.exsurge.net
+		echo autoupdate_proxy = gz.exsurge.net
+		echo:
+		echo [debug]
+	) >> "%_CFG_FILE_TEMP%"
+)
+
 exit /B
 
 :junction

@@ -240,22 +240,11 @@ reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_RE
 echo DONE
 exit /B
 
-:junction
-rem https://stackoverflow.com/a/8071683
-rem Get the install directory name
-for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
-
-if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
-mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
-
-if %ERRORLEVEL%==0 (
-	echo:
-	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-	echo:
-	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-	echo It can safely be renamed or deleted.
-)
-
+:cleanup
+echo Removing registry entries for Dungeon Siege and Legends of Aranna...
+reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
+reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
+echo DONE
 goto end
 
 :export
@@ -281,11 +270,22 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 
 goto end
 
-:cleanup
-echo Removing registry entries for Dungeon Siege and Legends of Aranna...
-reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
-echo DONE
+:junction
+rem https://stackoverflow.com/a/8071683
+rem Get the install directory name
+for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
+
+if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
+mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
+
+if %ERRORLEVEL%==0 (
+	echo:
+	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
+	echo:
+	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+	echo It can safely be renamed or deleted.
+)
+
 goto end
 
 :openzone
@@ -400,26 +400,6 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 
 exit /B
 
-:gmax
-echo Checking for the Gmax executable...
-
-if exist gmax.exe (
-	echo OK
-	echo:
-	echo Adding the environment variable for Gmax...
-	setx GMAXLOC "%CD%" > nul
-) else (
-	echo gmax.exe not found in the current directory!
-	echo:
-	set "_CHOICE="
-	pause
-	cls
-	goto menu
-)
-
-echo DONE
-goto end
-
 :controlled
 echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
 
@@ -447,6 +427,26 @@ if not defined _LINUX (
 		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
 		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
 	)
+)
+
+echo DONE
+goto end
+
+:gmax
+echo Checking for the Gmax executable...
+
+if exist gmax.exe (
+	echo OK
+	echo:
+	echo Adding the environment variable for Gmax...
+	setx GMAXLOC "%CD%" > nul
+) else (
+	echo gmax.exe not found in the current directory!
+	echo:
+	set "_CHOICE="
+	pause
+	cls
+	goto menu
 )
 
 echo DONE

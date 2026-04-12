@@ -8,7 +8,7 @@ echo:
 :linux_check
 rem Check if run from Linux
 fsutil | find "dirty" > nul
-if %ERRORLEVEL% == 1 set "_LINUX=1"
+if %ERRORLEVEL%==1 set "_LINUX=1"
 
 :parse_args
 rem Check and validate arguments
@@ -42,7 +42,7 @@ rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
 fsutil dirty query %SystemDrive% > nul
 
-if %ERRORLEVEL% == 0 (
+if %ERRORLEVEL%==0 (
 	echo OK
 ) else (
 	echo ERROR: admin rights not detected.
@@ -70,7 +70,7 @@ rem Check if we're on a 32-bit system
 set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
-if %PROCESSOR_ARCHITECTURE% == x86 (
+if %PROCESSOR_ARCHITECTURE%==x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
 		set "_OS_BITNESS=32"
 		set "_PROGRAM_FILES=%ProgramFiles%"
@@ -91,7 +91,7 @@ set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
-if %_OS_BITNESS% == 32 (
+if %_OS_BITNESS%==32 (
 	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
 	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
 	set "_REG_ARG="
@@ -123,7 +123,7 @@ echo Searching for the game Steam installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
-if "%_INSTALL_LOCATION%" == "" (
+if "%_INSTALL_LOCATION%"=="" (
 	echo No Steam installation directory found!
 ) else (
 	echo Steam installation directory found: %_INSTALL_LOCATION%
@@ -150,7 +150,7 @@ echo Searching for the game GOG installation directory...
 
 for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
-if "%_INSTALL_LOCATION%" == "" (
+if "%_INSTALL_LOCATION%"=="" (
 	echo No GOG installation directory found!
 	goto end
 ) else (
@@ -213,19 +213,19 @@ if not defined _LINUX (
 
 echo:
 
-if %ERRORLEVEL% == 1 call :ds1 & echo: & call :ds1loa & goto end
-if %ERRORLEVEL% == 2 call :ds1 & goto end
-if %ERRORLEVEL% == 3 call :ds1loa & goto end
-if %ERRORLEVEL% == 4 goto cleanup
-if %ERRORLEVEL% == 5 goto export
+if %ERRORLEVEL%==1 call :ds1 & echo: & call :ds1loa & goto end
+if %ERRORLEVEL%==2 call :ds1 & goto end
+if %ERRORLEVEL%==3 call :ds1loa & goto end
+if %ERRORLEVEL%==4 goto cleanup
+if %ERRORLEVEL%==5 goto export
 if not defined _LINUX (
-	if %ERRORLEVEL% == 6 goto junction
-	if %ERRORLEVEL% == 7 goto openzone
-	if %ERRORLEVEL% == 8 goto controlled
-	if %ERRORLEVEL% == 9 goto gmax
-	if %ERRORLEVEL% == 0 exit /B
+	if %ERRORLEVEL%==6 goto junction
+	if %ERRORLEVEL%==7 goto openzone
+	if %ERRORLEVEL%==8 goto controlled
+	if %ERRORLEVEL%==9 goto gmax
+	if %ERRORLEVEL%==0 exit /B
 ) else (
-	if %ERRORLEVEL% == 6 exit /B
+	if %ERRORLEVEL%==6 exit /B
 )
 
 :ds1
@@ -248,7 +248,7 @@ for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
 if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
 
-if %ERRORLEVEL% == 0 (
+if %ERRORLEVEL%==0 (
 	echo:
 	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
 	echo:
@@ -256,8 +256,6 @@ if %ERRORLEVEL% == 0 (
 	echo It can safely be renamed or deleted.
 )
 
-echo:
-echo DONE
 goto end
 
 :export
@@ -379,7 +377,7 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 
 	rem Write the current line to the temp file until we reach the MP section
 	if !_IN_SECTION! equ 0 (
-		if not "!_LINE!" == "" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
+		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
 	) else (
 		rem Append the MP section to the temp file
 		(

@@ -1,34 +1,40 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.53)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.54)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
+:linux_check
+rem Check if run from Linux
+fsutil | find "dirty" > nul
+if %ERRORLEVEL% == 1 set "_LINUX=1"
+
 :parse_args
 rem Check and validate arguments
-if "%~1"=="" goto linux_check
-if /I "%~1"=="-c" (
+if "%~1"=="" (
+	rem Do nothing
+	break 2> nul
+) else if /I "%~1"=="-c" (
 	rem It must be a digit between 1 and 9 to match the choices below
 	if "%~2"=="1" set "_CHOICE=%~2"
 	if "%~2"=="2" set "_CHOICE=%~2"
 	if "%~2"=="3" set "_CHOICE=%~2"
 	if "%~2"=="4" set "_CHOICE=%~2"
 	if "%~2"=="5" set "_CHOICE=%~2"
-	if "%~2"=="6" set "_CHOICE=%~2"
-	if "%~2"=="7" set "_CHOICE=%~2"
-	if "%~2"=="8" set "_CHOICE=%~2"
-	if "%~2"=="9" set "_CHOICE=%~2"
+
+	if not defined _LINUX (
+		if "%~2"=="6" set "_CHOICE=%~2"
+		if "%~2"=="7" set "_CHOICE=%~2"
+		if "%~2"=="8" set "_CHOICE=%~2"
+		if "%~2"=="9" set "_CHOICE=%~2"
+	)
+
 	if not defined _CHOICE goto usage
 ) else goto usage
 
-:linux_check
-rem Check if run from Linux and skip the admin check, otherwise we'll be stuck in an endless loop
-fsutil | find "dirty" > nul
-if %ERRORLEVEL% == 1 (
-	set "_LINUX=1"
-	goto init
-)
+rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
+if defined _LINUX goto init
 
 :admin_check
 rem https://ss64.com/vb/syntax-elevate.html
@@ -173,20 +179,36 @@ echo:
 echo 1. Add registry entries for Dungeon Siege and Legends of Aranna
 echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Tool Kit)
 echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
-echo 4. Create a directory junction in Program Files (useful for GameRanger)
+echo 4. Remove registry entries for both games
 echo 5. Export registry entries to a REG file (to import them manually)
-echo 6. Remove registry entries for both games
-echo 7. Redirect ZoneMatch to OpenZone (needed to play online through ZoneMatch)
-echo 8. Add environment variable for Gmax (useful for modders installing SiegeMax)
-echo 9. Add the game executable(s) to the list of allowed applications in Controlled Folder Access (useful on Windows 10/11)
-echo 0. Exit
+
+if not defined _LINUX (
+	echo 6. Create a directory junction in Program Files ^(useful for GameRanger^)
+	echo 7. Redirect ZoneMatch to OpenZone ^(needed to play online through ZoneMatch^)
+	echo 8. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
+	echo 9. Add the environment variable for Gmax ^(useful for modders installing SiegeMax^)
+	echo 0. Exit
+) else (
+	echo 6. Exit
+)
+
+echo:
+echo Note: if you're not sure which option to select, just press 1.
 echo:
 
 rem Automatically make a selection if arguments were passed
-if defined _CHOICE (
-	choice /C:123456789 /N /T 0 /D %_CHOICE%
+if not defined _LINUX (
+	if defined _CHOICE (
+		choice /C:123456789 /N /T 0 /D %_CHOICE%
+	) else (
+		choice /C:1234567890 /N
+	)
 ) else (
-	choice /C:1234567890 /N
+	if defined _CHOICE (
+		choice /C:12345 /N /T 0 /D %_CHOICE%
+	) else (
+		choice /C:123456 /N
+	)
 )
 
 echo:
@@ -194,13 +216,17 @@ echo:
 if %ERRORLEVEL% == 1 call :ds1 & echo: & call :ds1loa & goto end
 if %ERRORLEVEL% == 2 call :ds1 & goto end
 if %ERRORLEVEL% == 3 call :ds1loa & goto end
-if %ERRORLEVEL% == 4 goto junction
+if %ERRORLEVEL% == 4 goto cleanup
 if %ERRORLEVEL% == 5 goto export
-if %ERRORLEVEL% == 6 goto cleanup
-if %ERRORLEVEL% == 7 goto openzone
-if %ERRORLEVEL% == 8 goto gmax
-if %ERRORLEVEL% == 9 goto controlled
-if %ERRORLEVEL% == 0 exit /B
+if not defined _LINUX (
+	if %ERRORLEVEL% == 6 goto junction
+	if %ERRORLEVEL% == 7 goto openzone
+	if %ERRORLEVEL% == 8 goto controlled
+	if %ERRORLEVEL% == 9 goto gmax
+	if %ERRORLEVEL% == 0 exit /B
+) else (
+	if %ERRORLEVEL% == 6 exit /B
+)
 
 :ds1
 echo Adding registry entries for Dungeon Siege...
@@ -397,7 +423,7 @@ echo DONE
 goto end
 
 :controlled
-echo Adding the game executable(s) to the Controlled Folder Access exclusion list...
+echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
 
 if not defined _LINUX (
 	if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
@@ -431,7 +457,11 @@ goto end
 :usage
 echo Usage:
 echo:
-echo %~0 -c X (where X is a number between 1 and 9)
+if not defined _LINUX (
+	echo %~0 -c X ^(where X is a number between 1 and 9^)
+) else (
+	echo %~0 -c X ^(where X is a number between 1 and 5^)
+)
 
 :end
 echo:

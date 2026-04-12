@@ -22,9 +22,9 @@ if "%~1"=="" (
 	if "%~2"=="3" set "_CHOICE=%~2"
 	if "%~2"=="4" set "_CHOICE=%~2"
 	if "%~2"=="5" set "_CHOICE=%~2"
+	if "%~2"=="6" set "_CHOICE=%~2"
 
 	if not defined _LINUX (
-		if "%~2"=="6" set "_CHOICE=%~2"
 		if "%~2"=="7" set "_CHOICE=%~2"
 		if "%~2"=="8" set "_CHOICE=%~2"
 		if "%~2"=="9" set "_CHOICE=%~2"
@@ -181,15 +181,15 @@ echo 2. Add registry entries for Dungeon Siege (needed for DSMod and the DS1 Too
 echo 3. Add registry entries for Dungeon Siege: Legends of Aranna (needed for DSLOAMod)
 echo 4. Remove registry entries for both games
 echo 5. Export registry entries to a REG file (to import them manually)
+echo 6. Redirect ZoneMatch to OpenZone ^(needed to play online through ZoneMatch^)
 
 if not defined _LINUX (
-	echo 6. Create a directory junction in Program Files ^(useful for GameRanger^)
-	echo 7. Redirect ZoneMatch to OpenZone ^(needed to play online through ZoneMatch^)
+	echo 7. Create a directory junction in Program Files ^(useful for GameRanger^)
 	echo 8. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
 	echo 9. Add the environment variable for Gmax ^(useful for modders installing SiegeMax^)
 	echo 0. Exit
 ) else (
-	echo 6. Exit
+	echo 7. Exit
 )
 
 echo:
@@ -205,9 +205,9 @@ if not defined _LINUX (
 	)
 ) else (
 	if defined _CHOICE (
-		choice /C:12345 /N /T 0 /D %_CHOICE%
+		choice /C:123456 /N /T 0 /D %_CHOICE%
 	) else (
-		choice /C:123456 /N
+		choice /C:1234567 /N
 	)
 )
 
@@ -218,14 +218,15 @@ if %ERRORLEVEL%==2 call :ds1 & goto end
 if %ERRORLEVEL%==3 call :ds1loa & goto end
 if %ERRORLEVEL%==4 goto cleanup
 if %ERRORLEVEL%==5 goto export
+if %ERRORLEVEL%==6 goto openzone
+
 if not defined _LINUX (
-	if %ERRORLEVEL%==6 goto junction
-	if %ERRORLEVEL%==7 goto openzone
+	if %ERRORLEVEL%==7 goto junction
 	if %ERRORLEVEL%==8 goto controlled
 	if %ERRORLEVEL%==9 goto gmax
 	if %ERRORLEVEL%==0 exit /B
 ) else (
-	if %ERRORLEVEL%==6 exit /B
+	if %ERRORLEVEL%==7 exit /B
 )
 
 :ds1
@@ -267,24 +268,6 @@ echo Exporting registry entries for Dungeon Siege and Legends of Aranna...
 echo DONE
 echo:
 echo A new file called "%_REG_FILE%" has been created in the current directory.
-
-goto end
-
-:junction
-rem https://stackoverflow.com/a/8071683
-rem Get the install directory name
-for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
-
-if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
-mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
-
-if %ERRORLEVEL%==0 (
-	echo:
-	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-	echo:
-	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-	echo It can safely be renamed or deleted.
-)
 
 goto end
 
@@ -400,6 +383,24 @@ for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
 
 exit /B
 
+:junction
+rem https://stackoverflow.com/a/8071683
+rem Get the install directory name
+for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
+
+if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
+mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
+
+if %ERRORLEVEL%==0 (
+	echo:
+	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
+	echo:
+	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
+	echo It can safely be renamed or deleted.
+)
+
+goto end
+
 :controlled
 echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
 
@@ -458,7 +459,7 @@ echo:
 if not defined _LINUX (
 	echo %~0 -c X ^(where X is a number between 1 and 9^)
 ) else (
-	echo %~0 -c X ^(where X is a number between 1 and 5^)
+	echo %~0 -c X ^(where X is a number between 1 and 6^)
 )
 
 :end

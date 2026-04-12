@@ -351,8 +351,8 @@ if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
 set "_IN_SECTION=0"
 
 rem Read the config file line by line
-rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the # character that's usually unused
-for /F "usebackq eol=# delims=" %%L in ("%_CFG_FILE%") do (
+rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
+for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 	set "_LINE=%%L"
 
 	rem Section detection logic

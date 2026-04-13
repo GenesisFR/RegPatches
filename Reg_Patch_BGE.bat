@@ -14,7 +14,7 @@ rem Restart the script as admin if it wasn't the case already
 echo Checking if the script is run as admin...
 fsutil dirty query %SYSTEMDRIVE% > nul
 
-if %ERRORLEVEL%% == 0 (
+if %ERRORLEVEL%%==0 (
 	echo OK
 ) else (
 	echo ERROR: admin rights not detected.
@@ -57,7 +57,7 @@ set "_REG_FILE=%~n0.reg"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 15130"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
-if %_OS_BITNESS% == 32 (
+if %_OS_BITNESS%==32 (
 	set "_BGE_EXPORT=HKEY_LOCAL_MACHINE\Software\ubisoft\Beyond Good ^^^& Evil"
 	set "_REG_ARG="
 )
@@ -111,10 +111,10 @@ echo:
 
 choice /C:1234 /N
 
-if %ERRORLEVEL% == 1 goto bge
-if %ERRORLEVEL% == 2 goto cleanup
-if %ERRORLEVEL% == 3 goto export
-if %ERRORLEVEL% == 4 exit /B
+if %ERRORLEVEL%==1 goto bge
+if %ERRORLEVEL%==2 goto cleanup
+if %ERRORLEVEL%==3 goto export
+if %ERRORLEVEL%==4 exit /B
 
 :bge
 echo Adding registry entries for Beyond Good and Evil...

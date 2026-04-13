@@ -295,6 +295,12 @@ goto end
 echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
 
 if not defined WINEPREFIX (
+	if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
+			echo Adding DS2VideoConfig.exe...
+			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+	)
+
 	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
 		echo Adding DungeonSiege2.exe...
 		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1

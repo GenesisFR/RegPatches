@@ -445,6 +445,12 @@ if not defined _LINUX (
 		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
 	)
 
+	if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
+			echo Adding DSVideoConfig.exe...
+			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+	)
+
 	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
 		echo Adding DungeonSiege.exe...
 		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1

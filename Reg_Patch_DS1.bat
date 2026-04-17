@@ -292,8 +292,11 @@ if not defined _LINUX (
 
 			echo DONE
 			echo:
-			echo Please run the reg patch again for changes to take effect.
-			goto end
+			echo The reg patch will now restart for changes to take effect.
+			call :end
+			cls
+			cmd /c %0 -c 6
+			exit /B
 		)
 	)
 )

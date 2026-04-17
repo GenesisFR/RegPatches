@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.54)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.55)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
@@ -228,7 +228,7 @@ if not defined _LINUX (
 	if %ERRORLEVEL%==7 goto junction
 	if %ERRORLEVEL%==8 goto controlled
 	if %ERRORLEVEL%==9 goto gmax
-	if %ERRORLEVEL%==0 exit /B
+	if %ERRORLEVEL%==10 exit /B
 ) else (
 	if %ERRORLEVEL%==7 exit /B
 )

@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.54)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.55)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
@@ -176,6 +176,7 @@ echo 3. Add registry entries for Dungeon Siege 2: Broken World (needed for Elys 
 echo 4. Remove registry entries for both games
 echo 5. Export registry entries to a REG file (to import them manually)
 
+rem Hide Windows-specific options on Linux
 if not defined _LINUX (
 	echo 6. Create a directory junction in Program Files ^(useful for GameRanger^)
 	echo 7. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
@@ -210,6 +211,8 @@ if %ERRORLEVEL%==2 call :ds2 & goto end
 if %ERRORLEVEL%==3 call :ds2bw & goto end
 if %ERRORLEVEL%==4 goto cleanup
 if %ERRORLEVEL%==5 goto export
+
+rem Don't handle Windows-specific options on Linux
 if not defined _LINUX (
 	if %ERRORLEVEL%==6 goto junction
 	if %ERRORLEVEL%==7 goto controlled
@@ -217,6 +220,9 @@ if not defined _LINUX (
 ) else (
 	if %ERRORLEVEL%==6 exit /B
 )
+
+rem This is only here to help with development since we should never reach this in practice
+echo No valid choice detected! & goto end
 
 :ds2
 echo Adding registry entries for Dungeon Siege 2...

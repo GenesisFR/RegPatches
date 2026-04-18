@@ -195,6 +195,7 @@ echo 4. Remove registry entries for both games
 echo 5. Export registry entries to a REG file (to import them manually)
 echo 6. Redirect ZoneMatch to OpenZone ^(needed to play online through ZoneMatch^)
 
+rem Hide Windows-specific options on Linux
 if not defined _LINUX (
 	echo 7. Create a directory junction in Program Files ^(useful for GameRanger^)
 	echo 8. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
@@ -232,6 +233,7 @@ if %ERRORLEVEL%==4 goto cleanup
 if %ERRORLEVEL%==5 goto export
 if %ERRORLEVEL%==6 goto openzone
 
+rem Don't handle Windows-specific options on Linux
 if not defined _LINUX (
 	if %ERRORLEVEL%==7 goto junction
 	if %ERRORLEVEL%==8 goto controlled
@@ -240,6 +242,9 @@ if not defined _LINUX (
 ) else (
 	if %ERRORLEVEL%==7 exit /B
 )
+
+rem This is only here to help with development since we should never reach this in practice
+echo No valid choice detected! & goto end
 
 :ds1
 echo Adding registry entries for Dungeon Siege...
@@ -286,7 +291,7 @@ goto end
 :openzone
 echo Redirecting the ZoneMatch server to OpenZone...
 
-rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands further below won't work)
+rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		rem Check the registry if it's already been whitelisted
@@ -303,6 +308,8 @@ if not defined _LINUX (
 			echo The reg patch will now restart for changes to take effect.
 			call :end
 			cls
+
+			rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
 			cmd /c %0 -c 6
 			exit /B
 		)
@@ -343,7 +350,7 @@ if exist "%_CFG_FILE_LOA%" (
 	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 
-if %_CFG_FILE_FOUND% equ 0 (
+if %_CFG_FILE_FOUND%==0 (
 	echo No config file found! Make sure to run the game at least once to generate it.
 ) else (
 	echo DONE
@@ -374,7 +381,7 @@ for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 	)
 
 	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION! equ 0 (
+	if !_IN_SECTION!==0 (
 		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
 	) else (
 		rem Append the MP section to the temp file
@@ -397,7 +404,7 @@ for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 )
 
 rem No MP section was found
-if !_IN_SECTION! equ 0 (
+if !_IN_SECTION!==0 (
 	rem Append the MP section to the temp file
 	(
 		echo:

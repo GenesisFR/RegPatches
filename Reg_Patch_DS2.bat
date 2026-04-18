@@ -7,8 +7,16 @@ echo:
 
 :linux_check
 rem Check if run from Linux
-fsutil | find "dirty" > nul
-if %ERRORLEVEL%==1 set "_LINUX=1"
+fsutil | find "dirty" > nul 2>&1
+if not %ERRORLEVEL%==0 set "_LINUX=1"
+break > nul 2>&1
+if not %ERRORLEVEL%==0 set "_LINUX=1"
+dir /n > nul 2>&1
+if not %ERRORLEVEL%==0 set "_LINUX=1"
+dir /4 > nul 2>&1
+if not %ERRORLEVEL%==0 set "_LINUX=1"
+dpath > nul 2>&1
+if not %ERRORLEVEL%==0 set "_LINUX=1"
 
 :parse_args
 rem Check and validate arguments

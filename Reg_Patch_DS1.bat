@@ -6,6 +6,7 @@ echo You can find the latest version or report issues at https://github.com/Gene
 echo:
 
 :linux_check
+rem https://www.reddit.com/r/Batch/comments/odynta/check_whether_bat_is_run_from_wine
 rem Check if run from Linux
 fsutil | find "dirty" > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
@@ -150,8 +151,7 @@ if "%_INSTALL_LOCATION%"=="" (
 		echo OK
 		goto menu
 	) else (
-		echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
-		goto end
+		echo DungeonSiege.exe and DSLOA.exe not found in the game Steam installation directory!
 	)
 )
 
@@ -178,7 +178,7 @@ if "%_INSTALL_LOCATION%"=="" (
 		echo OK
 		goto menu
 	) else (
-		echo DungeonSiege.exe and DSLOA.exe not found in the installation directory!
+		echo DungeonSiege.exe and DSLOA.exe not found in the game GOG installation directory!
 		goto end
 	)
 )

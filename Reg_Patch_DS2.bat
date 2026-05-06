@@ -6,6 +6,7 @@ echo You can find the latest version or report issues at https://github.com/Gene
 echo:
 
 :linux_check
+rem https://www.reddit.com/r/Batch/comments/odynta/check_whether_bat_is_run_from_wine
 rem Check if run from Linux
 fsutil | find "dirty" > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
@@ -117,53 +118,12 @@ if exist DungeonSiege2.exe (
 	echo DungeonSiege2.exe not found in the current directory!
 )
 
-:steam_install_detection
-rem Check where the game is installed from the registry
-echo:
-echo Searching for the game Steam installation directory...
-
-for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_STEAM%" /v InstallLocation 2^>nul') do set "_INSTALL_LOCATION=%%B"
-
-if "%_INSTALL_LOCATION%"=="" (
-	echo No Steam installation directory found!
-) else (
-	echo Steam installation directory found: %_INSTALL_LOCATION%
-
-	rem Check for the game executable in the installation directory
-	echo Checking for the game executable...
-
-	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-		echo OK
-		goto menu
-	) else (
-		echo DungeonSiege2.exe not found in the installation directory!
-	)
-)
-
-:gog_install_detection
-rem Check where the game is installed from the registry
-echo:
-echo Searching for the game GOG installation directory...
-
-for /F "tokens=2*" %%A in ('reg query "%_REG_KEY_GOG%" /v path 2^>nul') do set "_INSTALL_LOCATION=%%B"
-
-if "%_INSTALL_LOCATION%"=="" (
-	echo No GOG installation directory found!
-	goto end
-) else (
-	echo GOG installation directory found: %_INSTALL_LOCATION%
-
-	rem Check for the game executable in the installation directory
-	echo Checking for the game executable...
-
-	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-		echo OK
-		goto menu
-	) else (
-		echo DungeonSiege2.exe not found in the installation directory!
-		goto end
-	)
-)
+rem Check for the game executables in the Steam installation directory, then GOG if not found
+call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
+if %ERRORLEVEL%==100 call :install_detection GOG "%_REG_KEY_GOG%" path
+if %ERRORLEVEL%==100 goto end
+rem We've been through the menu, exit
+if %ERRORLEVEL% LEQ 10 goto :eof
 
 :menu
 rem Selection menu
@@ -223,6 +183,31 @@ if not defined _LINUX (
 
 rem This is only here to help with development since we should never reach this in practice
 echo No valid choice detected! & goto end
+
+:install_detection
+rem Check where the game is installed from the registry
+echo:
+echo Searching for the %1 installation directory...
+
+for /F "tokens=2*" %%A in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%B"
+
+if "%_INSTALL_LOCATION%"=="" (
+	echo No %1 installation directory found!
+	exit /B 100
+) else (
+	echo %1 installation directory found: %_INSTALL_LOCATION%
+
+	rem Check for the game executable in the installation directory
+	echo Checking for the game executable...
+
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+		echo OK
+		goto menu
+	) else (
+		echo DungeonSiege2.exe not found in the %1 installation directory!
+		exit /B 100
+	)
+)
 
 :ds2
 echo Adding registry entries for Dungeon Siege 2...

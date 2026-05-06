@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.55)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.56)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
@@ -116,6 +116,8 @@ if exist DungeonSiege2.exe (
 	goto menu
 ) else (
 	echo DungeonSiege2.exe not found in the current directory!
+	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
+	if defined _LINUX goto end
 )
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found

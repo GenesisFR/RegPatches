@@ -281,6 +281,9 @@ if not defined _LINUX (
 		if not defined _IS_CMD_ALLOWED (
 			echo "%SystemRoot%\system32\cmd.exe" is going to be added to the list of allowed applications in Controlled Folder Access.
 
+			echo:
+			pause
+			
 			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
 			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
 

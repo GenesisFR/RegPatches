@@ -76,6 +76,7 @@ cd /d "%~dp0"
 
 rem https://ss64.com/nt/syntax-64bit.html
 rem Check if we're on a 32-bit system
+set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
@@ -100,7 +101,9 @@ set "_MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Ar
 set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
 set "_REG_ARG=/reg:32"
 set "_REG_FILE=%~n0.reg"
+set "_REG_KEY_CFA=HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications"
 set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
+set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
@@ -276,16 +279,16 @@ rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		rem Check in the registry if it's already been whitelisted
-		for /f "tokens=2*" %%A in ('reg query "HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications" /v "%SystemRoot%\system32\cmd.exe" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
+		for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
 		if not defined _IS_CMD_ALLOWED (
-			echo "%SystemRoot%\system32\cmd.exe" is going to be added to the list of allowed applications in Controlled Folder Access.
+			echo "%_COMSPEC%" is going to be added to the list of allowed applications in Controlled Folder Access.
 
 			echo:
 			pause
 			
-			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
-			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%SystemRoot%\system32\cmd.exe' > nul 2>&1
+			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
 			echo DONE
 			echo:
@@ -302,7 +305,7 @@ if not defined _LINUX (
 
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
-for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%B"
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%B"
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"

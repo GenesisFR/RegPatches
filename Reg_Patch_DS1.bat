@@ -275,7 +275,7 @@ echo Redirecting the ZoneMatch server to OpenZone...
 rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
-		rem Check the registry if it's already been whitelisted
+		rem Check in the registry if it's already been whitelisted
 		for /f "tokens=2*" %%A in ('reg query "HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications" /v "%SystemRoot%\system32\cmd.exe" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
 		if not defined _IS_CMD_ALLOWED (
@@ -291,7 +291,7 @@ if not defined _LINUX (
 			cls
 
 			rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
-			cmd /c %0 -c 6
+			cmd /c "%~f0" -c 6
 			exit /B
 		)
 	)

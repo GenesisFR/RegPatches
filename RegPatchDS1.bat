@@ -114,19 +114,25 @@ if not defined _LINUX (
 	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
 )
 
+:cfa_check
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
+
 if %_WINVER% GEQ 10 (
 	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
 )
 
+rem The value above is hexadecimal so we need to convert it to decimal
+set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
+
+:powershell_check
 rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
-for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell"
+for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
 	set "_PWSH_CMD=powershell"
 ) else (
-	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh"
+	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
 
 	if %ERRORLEVEL%==0 (
 		set "_PWSH_CMD=pwsh"
@@ -304,7 +310,7 @@ rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
-			if defined %_PWSH_CMD% (
+			if defined _PWSH_CMD (
 				rem Check in the registry if it's already been whitelisted
 				for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
@@ -463,7 +469,7 @@ goto end
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
-			if defined %_PWSH_CMD% (
+			if defined _PWSH_CMD (
 				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
 
 				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (

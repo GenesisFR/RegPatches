@@ -74,6 +74,18 @@ rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-
 rem Correct the current directory when a script is run as admin
 cd /d "%~dp0"
 
+rem Shortcuts for registry stuff
+set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"
+set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0"
+set "_MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna"
+set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
+set "_REG_ARG=/reg:32"
+set "_REG_FILE=%~n0.reg"
+set "_REG_KEY_CFA=HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access"
+set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
+set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
+
 rem https://ss64.com/nt/syntax-64bit.html
 rem Check if we're on a 32-bit system
 set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
@@ -91,20 +103,13 @@ rem Store the Windows version
 if not defined _LINUX (
 	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
 ) else (
+	rem Needed to fix a syntax error on Linux, even though the corresponding code will never be executed...
 	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
 )
 
-rem Shortcuts for registry stuff
-set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"
-set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\DungeonSiege\1.0"
-set "_MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna"
-set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
-set "_REG_ARG=/reg:32"
-set "_REG_FILE=%~n0.reg"
-set "_REG_KEY_CFA=HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access\AllowedApplications"
-set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
-set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
-set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS%==32 (
@@ -280,27 +285,29 @@ echo Redirecting the ZoneMatch server to OpenZone...
 rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
-		rem Check in the registry if it's already been whitelisted
-		for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
+		if %_IS_CFA_ENABLED%==1 (
+			rem Check in the registry if it's already been whitelisted
+			for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
-		if not defined _IS_CMD_ALLOWED (
-			echo "%_COMSPEC%" is going to be added to the list of allowed applications in Controlled Folder Access.
+			if not defined _IS_CMD_ALLOWED (
+				echo "%_COMSPEC%" is going to be added to the list of allowed applications in Controlled Folder Access.
 
-			echo:
-			pause
-			
-			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
-			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+				echo:
+				pause
+				
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
-			echo DONE
-			echo:
-			echo The reg patch will now restart for changes to take effect.
-			call :end
-			cls
+				echo DONE
+				echo:
+				echo The reg patch will now restart for changes to take effect.
+				call :end
+				cls
 
-			rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
-			cmd /c "%~f0" -c 6
-			exit /B
+				rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
+				cmd /c "%~f0" -c 6
+				exit /B
+			)
 		)
 	)
 )
@@ -434,34 +441,42 @@ goto end
 echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
 
 if not defined _LINUX (
-	if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-		echo Adding DSLOA.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-	)
+	if %_WINVER% GEQ 10 (
+		if %_IS_CFA_ENABLED%==1 (
+			if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+				echo Adding DSLOA.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
-		echo Adding DSLOAMod.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-	)
+			if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
+				echo Adding DSLOAMod.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DSMod.exe" (
-		echo Adding DSMod.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-	)
+			if exist "%_INSTALL_LOCATION%\DSMod.exe" (
+				echo Adding DSMod.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
-			echo Adding DSVideoConfig.exe...
-			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-	)
+			if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
+					echo Adding DSVideoConfig.exe...
+					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-		echo Adding DungeonSiege.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+			if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+				echo Adding DungeonSiege.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+			)
+		) else (
+			echo Controlled Folder Access is disabled, nothing to do.
+		)
+	) else (
+		echo You're not on Windows 10 or newer.
 	)
 )
 
@@ -478,6 +493,7 @@ if exist gmax.exe (
 	setx GMAXLOC "%CD%" > nul
 ) else (
 	echo gmax.exe not found in the current directory!
+	echo Make sure to run the reg patch from your Gmax installation directory.
 	echo:
 	set "_CHOICE="
 	pause

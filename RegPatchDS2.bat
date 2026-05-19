@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.56)
+title Reg Patcher for Dungeon Siege 2 by Genesis (v1.57)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 

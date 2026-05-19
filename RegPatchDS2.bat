@@ -335,12 +335,14 @@ if %ERRORLEVEL%==0 (
 goto end
 
 :controlled
-call :cfa_check
-call :powershell_check
+setlocal EnableDelayedExpansion
 
 if not defined _LINUX (
+	call :cfa_check
+	call :powershell_check
+
 	if %_WINVER% GEQ 10 (
-		if %_IS_CFA_ENABLED%==1 (
+		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
 				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
 
@@ -372,6 +374,7 @@ if not defined _LINUX (
 	)
 )
 
+setlocal DisableDelayedExpansion
 echo DONE
 goto end
 

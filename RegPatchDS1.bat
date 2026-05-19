@@ -109,9 +109,6 @@ if %_OS_BITNESS%==32 (
 rem Store the Windows version
 if not defined _LINUX (
 	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
-) else (
-	rem Needed to fix a syntax error on Linux, even though the corresponding code will never be executed...
-	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
 )
 
 :exe_check
@@ -316,7 +313,7 @@ if not defined _LINUX (
 	call :cfa_check
 	call :powershell_check
 
-	if %_WINVER% GEQ 10 (
+	if !_WINVER! GEQ 10 (
 		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
 				rem Check in the registry if it's already been whitelisted
@@ -475,7 +472,7 @@ if not defined _LINUX (
 	call :cfa_check
 	call :powershell_check
 
-	if %_WINVER% GEQ 10 (
+	if !_WINVER! GEQ 10 (
 		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
 				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...

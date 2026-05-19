@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.56)
+title Reg Patcher for Dungeon Siege 1 by Genesis (v1.57)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
@@ -121,8 +121,6 @@ if %_WINVER% GEQ 10 (
 )
 
 rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
-set "_PWSH_CMD="
-
 for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell"
 
 if %ERRORLEVEL%==0 (
@@ -462,12 +460,12 @@ if %ERRORLEVEL%==0 (
 goto end
 
 :controlled
-echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
-
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
 			if defined %_PWSH_CMD% (
+				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
+
 				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
 					echo Adding DSLOA.exe...
 					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1

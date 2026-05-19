@@ -308,15 +308,16 @@ echo A new file called "%_REG_FILE%" has been created in the current directory.
 goto end
 
 :openzone
+setlocal EnableDelayedExpansion
 echo Redirecting the ZoneMatch server to OpenZone...
-
-call :cfa_check
-call :powershell_check
 
 rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
 if not defined _LINUX (
+	call :cfa_check
+	call :powershell_check
+
 	if %_WINVER% GEQ 10 (
-		if %_IS_CFA_ENABLED%==1 (
+		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
 				rem Check in the registry if it's already been whitelisted
 				for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
@@ -358,10 +359,7 @@ set "_CFG_FILE_FOUND=0"
 rem Update the DS config file if it exists
 if exist "%_CFG_FILE_DS%" (
 	set "_CFG_FILE_FOUND=1"
-
-	setlocal EnableDelayedExpansion
 	call :edit_ini "%_CFG_FILE_DS%"
-	setlocal DisableDelayedExpansion
 
 	rem Overwrite the original config file (even if it was read-only)
 	attrib -R "%_CFG_FILE_DS%"
@@ -371,10 +369,7 @@ if exist "%_CFG_FILE_DS%" (
 rem Update the LOA config file if it exists
 if exist "%_CFG_FILE_LOA%" (
 	set "_CFG_FILE_FOUND=1"
-
-	setlocal EnableDelayedExpansion
 	call :edit_ini "%_CFG_FILE_LOA%"
-	setlocal DisableDelayedExpansion
 
 	rem Overwrite the original config file (even if it was read-only)
 	attrib -R "%_CFG_FILE_LOA%"
@@ -387,6 +382,7 @@ if %_CFG_FILE_FOUND%==0 (
 	echo DONE
 )
 
+setlocal DisableDelayedExpansion
 goto end
 
 :edit_ini
@@ -473,12 +469,14 @@ if %ERRORLEVEL%==0 (
 goto end
 
 :controlled
-call :cfa_check
-call :powershell_check
+setlocal EnableDelayedExpansion
 
 if not defined _LINUX (
+	call :cfa_check
+	call :powershell_check
+
 	if %_WINVER% GEQ 10 (
-		if %_IS_CFA_ENABLED%==1 (
+		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
 				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
 
@@ -517,6 +515,7 @@ if not defined _LINUX (
 	)
 )
 
+setlocal DisableDelayedExpansion
 echo DONE
 goto end
 

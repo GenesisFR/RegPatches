@@ -84,10 +84,6 @@ set "_REG_FILE=%~n0.reg"
 set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
 
-rem Check in the registry if Controlled Folder Access is enabled
-set "_IS_CFA_ENABLED=0"
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
-
 rem https://ss64.com/nt/syntax-64bit.html
 set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
@@ -106,6 +102,40 @@ if %_OS_BITNESS%==32 (
 	set "_MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege2"
 	set "_REG_ARG="
 	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902"
+)
+
+rem Store the Windows version
+if not defined _LINUX (
+	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
+) else (
+	rem Needed to fix a syntax error on Linux, even though the corresponding code will never be executed...
+	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
+)
+
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+if %_WINVER% GEQ 10 (
+	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+)
+
+rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
+set "_PWSH_CMD="
+
+for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell"
+
+if %ERRORLEVEL%==0 (
+	set "_PWSH_CMD=powershell"
+) else (
+	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh"
+
+	if %ERRORLEVEL%==0 (
+		set "_PWSH_CMD=pwsh"
+	) else (
+		echo Powershell not found, some options may fail.
+		echo Make sure it's installed and is in your PATH environment variable.
+		echo:
+	)
 )
 
 :exe_check
@@ -300,30 +330,34 @@ goto end
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
-			echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
+			if defined %_PWSH_CMD% (
+				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
 
-			if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
-					echo Adding DS2VideoConfig.exe...
-					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
-					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
-			)
+				if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
+						echo Adding DS2VideoConfig.exe...
+						PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+						pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-				echo Adding DungeonSiege2.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
-			)
+				if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+					echo Adding DungeonSiege2.exe...
+					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
-				echo Adding DungeonSiege2Mod.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+				if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
+					echo Adding DungeonSiege2Mod.exe...
+					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+				)
+			) else (
+				echo Powershell not installed, nothing to do.
 			)
 		) else (
 			echo Controlled Folder Access is disabled, nothing to do.
 		)
 	) else (
-		echo You're not on Windows 10 or newer.
+		echo You're not on Windows 10 or newer, nothing to do.
 	)
 )
 

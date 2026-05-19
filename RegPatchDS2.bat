@@ -72,17 +72,6 @@ rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-
 rem Correct the current directory when a script is run as admin
 cd /d "%~dp0"
 
-rem https://ss64.com/nt/syntax-64bit.html
-set "_OS_BITNESS=64"
-set "_PROGRAM_FILES=%ProgramFiles(x86)%"
-
-if %PROCESSOR_ARCHITECTURE%==x86 (
-	if not defined PROCESSOR_ARCHITEW6432 (
-		set "_OS_BITNESS=32"
-		set "_PROGRAM_FILES=%ProgramFiles%"
-	)
-)
-
 rem Shortcuts for registry stuff
 set "_2K_BW=HKLM\Software\2K Games\Dungeon Siege 2 Broken World"
 set "_2K_BW_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\2K Games\Dungeon Siege 2 Broken World"
@@ -94,6 +83,21 @@ set "_REG_ARG=/reg:32"
 set "_REG_FILE=%~n0.reg"
 set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
+
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+
+rem https://ss64.com/nt/syntax-64bit.html
+set "_OS_BITNESS=64"
+set "_PROGRAM_FILES=%ProgramFiles(x86)%"
+
+if %PROCESSOR_ARCHITECTURE%==x86 (
+	if not defined PROCESSOR_ARCHITEW6432 (
+		set "_OS_BITNESS=32"
+		set "_PROGRAM_FILES=%ProgramFiles%"
+	)
+)
 
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS%==32 (
@@ -293,25 +297,33 @@ if %ERRORLEVEL%==0 (
 goto end
 
 :controlled
-echo Adding the game executable(s) to the list of allowed applications in Controlled Folder Access...
+if not defined _LINUX (
+	if %_WINVER% GEQ 10 (
+		if %_IS_CFA_ENABLED%==1 (
+			echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
 
-if not defined WINEPREFIX (
-	if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
-			echo Adding DS2VideoConfig.exe...
-			PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
-			pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
-	)
+			if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
+					echo Adding DS2VideoConfig.exe...
+					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-		echo Adding DungeonSiege2.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
-	)
+			if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+				echo Adding DungeonSiege2.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
+			)
 
-	if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
-		echo Adding DungeonSiege2Mod.exe...
-		PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
-		pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+			if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
+				echo Adding DungeonSiege2Mod.exe...
+				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
+			)
+		) else (
+			echo Controlled Folder Access is disabled, nothing to do.
+		)
+	) else (
+		echo You're not on Windows 10 or newer.
 	)
 )
 

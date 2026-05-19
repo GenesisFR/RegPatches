@@ -328,7 +328,7 @@ if not defined _LINUX (
 					echo:
 					pause
 					
-					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
 					echo DONE
 					echo:
@@ -482,27 +482,27 @@ if not defined _LINUX (
 
 				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
 					echo Adding DSLOA.exe...
-					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
 				)
 
 				if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
 					echo Adding DSLOAMod.exe...
-					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
 				)
 
 				if exist "%_INSTALL_LOCATION%\DSMod.exe" (
 					echo Adding DSMod.exe...
-					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
 				)
 
 				if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
 						echo Adding DSVideoConfig.exe...
-						%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+						!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
 				)
 
 				if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
 					echo Adding DungeonSiege.exe...
-					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
 				)
 			) else (
 				echo Powershell not installed, nothing to do.

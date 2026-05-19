@@ -98,7 +98,14 @@ if %PROCESSOR_ARCHITECTURE%==x86 (
 		set "_PROGRAM_FILES=%ProgramFiles%"
 	)
 )
-
+				
+rem WOW6432Node and /reg:32 aren't present on 32-bit systems
+if %_OS_BITNESS%==32 (
+	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
+	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
+	set "_REG_ARG="
+	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
+)
 rem Store the Windows version
 if not defined _LINUX (
 	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
@@ -109,14 +116,27 @@ if not defined _LINUX (
 
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+if %_WINVER% GEQ 10 (
+	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+)
 
-rem WOW6432Node and /reg:32 aren't present on 32-bit systems
-if %_OS_BITNESS%==32 (
-	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
-	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
-	set "_REG_ARG="
-	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
+rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
+set "_PWSH_CMD="
+
+for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell"
+
+if %ERRORLEVEL%==0 (
+	set "_PWSH_CMD=powershell"
+) else (
+	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh"
+
+	if %ERRORLEVEL%==0 (
+		set "_PWSH_CMD=pwsh"
+	) else (
+		echo Powershell not found, some options may fail.
+		echo Make sure it's installed and is in your PATH environment variable.
+		echo:
+	)
 )
 
 :exe_check
@@ -286,27 +306,31 @@ rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
-			rem Check in the registry if it's already been whitelisted
-			for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
+			if defined %_PWSH_CMD% (
+				rem Check in the registry if it's already been whitelisted
+				for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
-			if not defined _IS_CMD_ALLOWED (
-				echo "%_COMSPEC%" is going to be added to the list of allowed applications in Controlled Folder Access.
+				if not defined _IS_CMD_ALLOWED (
+					echo "%_COMSPEC%" is going to be added to the list of allowed applications in Controlled Folder Access.
 
-				echo:
-				pause
-				
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+					echo:
+					pause
+					
+					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
-				echo DONE
-				echo:
-				echo The reg patch will now restart for changes to take effect.
-				call :end
-				cls
+					echo DONE
+					echo:
+					echo The reg patch will now restart for changes to take effect.
+					call :end
+					cls
 
-				rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
-				cmd /c "%~f0" -c 6
-				exit /B
+					rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
+					cmd /c "%~f0" -c 6
+					exit /B
+				)
+			) else (
+				echo Powershell not installed.
+				goto end
 			)
 		)
 	)
@@ -443,40 +467,39 @@ echo Adding the game executable(s) to the list of allowed applications in Contro
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (
-			if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-				echo Adding DSLOA.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-			)
+			if defined %_PWSH_CMD% (
+				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+					echo Adding DSLOA.exe...
+					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
-				echo Adding DSLOAMod.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-			)
+				if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
+					echo Adding DSLOAMod.exe...
+					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DSMod.exe" (
-				echo Adding DSMod.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-			)
+				if exist "%_INSTALL_LOCATION%\DSMod.exe" (
+					echo Adding DSMod.exe...
+					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
-					echo Adding DSVideoConfig.exe...
-					PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-					pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-			)
+				if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
+						echo Adding DSVideoConfig.exe...
+						%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+				)
 
-			if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-				echo Adding DungeonSiege.exe...
-				PowerShell Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
-				pwsh Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+				if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+					echo Adding DungeonSiege.exe...
+					%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+				)
+			) else (
+				echo Powershell not installed, nothing to do.
 			)
 		) else (
 			echo Controlled Folder Access is disabled, nothing to do.
 		)
 	) else (
-		echo You're not on Windows 10 or newer.
+		echo You're not on Windows 10 or newer, nothing to do.
 	)
 )
 

@@ -113,35 +113,6 @@ if not defined _LINUX (
 	for /f "tokens=3 delims=. " %%i in ('ver') do set _WINVER=%%i
 )
 
-:cfa_check
-rem Check in the registry if Controlled Folder Access is enabled
-set "_IS_CFA_ENABLED=0"
-
-if %_WINVER% GEQ 10 (
-	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
-)
-
-rem The value above is hexadecimal so we need to convert it to decimal
-set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
-
-:powershell_check
-rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
-for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
-
-if %ERRORLEVEL%==0 (
-	set "_PWSH_CMD=powershell"
-) else (
-	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
-
-	if %ERRORLEVEL%==0 (
-		set "_PWSH_CMD=pwsh"
-	) else (
-		echo Powershell not found, some options may fail.
-		echo Make sure it's installed and is in your PATH environment variable.
-		echo:
-	)
-)
-
 :exe_check
 rem Check for the game executable in the current directory
 echo Current directory: %CD%
@@ -249,6 +220,39 @@ if "%_INSTALL_LOCATION%"=="" (
 	)
 )
 
+:cfa_check
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+
+if %_WINVER% GEQ 10 (
+	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+)
+
+rem The value above is hexadecimal so we need to convert it to decimal
+set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
+
+exit /B
+
+:powershell_check
+rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
+for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
+
+if %ERRORLEVEL%==0 (
+	set "_PWSH_CMD=powershell"
+) else (
+	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
+
+	if %ERRORLEVEL%==0 (
+		set "_PWSH_CMD=pwsh"
+	) else (
+		echo Powershell not found, some options may fail.
+		echo Make sure it's installed and is in your PATH environment variable.
+		echo:
+	)
+)
+
+exit /B
+
 :ds2
 echo Adding registry entries for Dungeon Siege 2...
 
@@ -331,6 +335,9 @@ if %ERRORLEVEL%==0 (
 goto end
 
 :controlled
+call :cfa_check
+call :powershell_check
+
 if not defined _LINUX (
 	if %_WINVER% GEQ 10 (
 		if %_IS_CFA_ENABLED%==1 (

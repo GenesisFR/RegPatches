@@ -1,7 +1,9 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 1 by Genesis (v1.57)
+set "_VERSION=1.57"
+
+title Reg Patcher for Dungeon Siege 1 by Genesis (v%_VERSION%)
 echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
 echo:
 
@@ -25,7 +27,7 @@ if "%~1"=="" (
 	rem Do nothing
 	break 2> nul
 ) else if /I "%~1"=="-c" (
-	rem It must be a digit between 1 and 9 to match the choices below
+	rem It must be a digit between 1 and 10 to match the choices below
 	if "%~2"=="1" set "_CHOICE=%~2"
 	if "%~2"=="2" set "_CHOICE=%~2"
 	if "%~2"=="3" set "_CHOICE=%~2"
@@ -37,6 +39,7 @@ if "%~1"=="" (
 		if "%~2"=="7" set "_CHOICE=%~2"
 		if "%~2"=="8" set "_CHOICE=%~2"
 		if "%~2"=="9" set "_CHOICE=%~2"
+		if "%~2"=="10" set "_CHOICE=%~2"
 	)
 
 	if not defined _CHOICE goto usage
@@ -155,7 +158,8 @@ if not defined _LINUX (
 	echo 7. Create a directory junction in Program Files ^(useful for GameRanger^)
 	echo 8. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
 	echo 9. Add the environment variable for Gmax ^(useful for modders installing SiegeMax^)
-	echo 0. Exit
+	echo 0. Check for updates
+	echo a. Exit
 ) else (
 	echo 7. Exit
 )
@@ -167,9 +171,9 @@ echo:
 rem Automatically make a selection if arguments were passed
 if not defined _LINUX (
 	if defined _CHOICE (
-		choice /C:123456789 /N /T 0 /D %_CHOICE%
+		choice /C:1234567890 /N /T 0 /D %_CHOICE%
 	) else (
-		choice /C:1234567890 /N
+		choice /C:1234567890a /N
 	)
 ) else (
 	if defined _CHOICE (
@@ -193,7 +197,8 @@ if not defined _LINUX (
 	if %ERRORLEVEL%==7 goto junction
 	if %ERRORLEVEL%==8 goto controlled
 	if %ERRORLEVEL%==9 goto gmax
-	if %ERRORLEVEL%==10 exit /B
+	if %ERRORLEVEL%==10 goto update
+	if %ERRORLEVEL%==11 exit /B
 ) else (
 	if %ERRORLEVEL%==7 exit /B
 )
@@ -537,13 +542,62 @@ if exist gmax.exe (
 echo DONE
 goto end
 
+:update
+rem Download repo version file
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
+curl --connect-timeout 3 -o "%TEMP%\RegPatchDS1_version.txt" "%_URL%" > nul 2>&1
+for /f %%G in ('type "%TEMP%\RegPatchDS1_version.txt"') do set _REPO_VERSION=%%G
+del %TEMP%\RegPatchDS1_version.txt
+
+rem Compare version numbers (without dots)
+if %_VERSION:.=% LSS %_REPO_VERSION:.=% (
+	echo A new version ^(%_REPO_VERSION%^) is available!
+) else (
+	echo You already have the latest version.
+	goto end
+)
+
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
+choice /M "Would you like to download it?"
+
+if %ERRORLEVEL%==1 (
+	echo Downloading the new reg patch...
+	rem curl was added in Windows 10 (1803)
+	curl --connect-timeout 5 -o "%TEMP%\RegPatchDS1.bat" "%_URL%" > nul 2>&1
+
+	rem Fall back to bitsadmin if curl failed or isn't installed
+	if %ERRORLEVEL% NEQ 0 (
+		rem Requires Support Tools on XP
+		rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
+		bitsadmin /transfer updateJob /download /priority foreground "%_URL%" "%TEMP%\RegPatchDS1.bat" > nul 2>&1
+		rem bitsadmin /create /download updateJob
+		rem bitsadmin /addfile updateJob "%_URL%" "%TEMP%\RegPatchDS1.bat"
+		rem bitsadmin /setmaxdownloadtime updateJob 5
+		rem bitsadmin /resume updateJob
+		rem bitsadmin /reset
+	)
+
+	if exist "%TEMP%\RegPatchDS1.bat" (
+		echo Update complete!
+		rem After replacing the BAT, execution seems to stop so we call :end beforehand
+		call :end
+		move /Y "%~f0" "%~dpn0.v%_VERSION%.bat.bak" > nul
+		move /Y "%TEMP%\RegPatchDS1.bat" "%~f0" > nul
+	) else (
+		echo Update failed. You probably don't have an internet connection.
+		echo If you're on Windows XP, make sure you have Support Tools installed.
+	)
+)
+
+goto end
+
 :usage
 echo Usage:
 echo:
 if not defined _LINUX (
-	echo %~0 -c X ^(where X is a number between 1 and 9^)
+	echo %~0 -c X ^(where X is a number between 1 and 10^)
 ) else (
-	echo %~0 -c X ^(where X is a number between 1 and 6^)
+	echo %~0 -c X ^(where X is a number between 1 and 7^)
 )
 
 :end

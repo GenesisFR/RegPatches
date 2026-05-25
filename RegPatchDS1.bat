@@ -6,17 +6,6 @@ set "_VERSION=1.57"
 title Reg Patcher for Dungeon Siege 1 by Genesis (v%_VERSION%)
 echo:
 
-rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
-rem Setup ANSI escape character for multi-color output
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
-set "cReset=%ESC%[0m"
-set "cTitle=%ESC%[96m"
-set "cMenu=%ESC%[93m"
-set "cSuccess=%ESC%[92m"
-set "cError=%ESC%[91m"
-set "cInfo=%ESC%[94m"
-set "cDim=%ESC%[90m"
-
 :linux_check
 rem https://www.reddit.com/r/Batch/comments/odynta/check_whether_bat_is_run_from_wine
 rem Check if run from Linux
@@ -55,8 +44,31 @@ if "%~1"=="" (
 	if not defined _CHOICE goto usage
 ) else goto usage
 
-rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
-if defined _LINUX goto init
+
+rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
+rem Setup ANSI escape character for multi-color output
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+set "cReset=%ESC%[0m"
+set "cTitle=%ESC%[96m"
+set "cMenu=%ESC%[93m"
+set "cSuccess=%ESC%[92m"
+set "cError=%ESC%[91m"
+set "cInfo=%ESC%[94m"
+set "cDim=%ESC%[90m"
+
+if defined _LINUX (
+	rem No multi-color output support
+	set "cReset="
+	set "cTitle="
+	set "cMenu="
+	set "cSuccess="
+	set "cError="
+	set "cInfo="
+	set "cDim="
+
+	rem Skip the admin check, otherwise we'll be stuck in an endless loop
+	goto init
+)
 
 :admin_check
 rem https://ss64.com/vb/syntax-elevate.html

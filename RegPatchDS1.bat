@@ -237,6 +237,7 @@ echo                              %cTitle%PROCESSING SELECTION%cReset%
 echo %cTitle%===============================================================================%cReset%
 echo:
 
+if %ERRORLEVEL%==0 goto menu
 if %ERRORLEVEL%==1 call :ds1 & echo: & call :ds1loa & goto end
 if %ERRORLEVEL%==2 call :ds1 & goto end
 if %ERRORLEVEL%==3 call :ds1loa & goto end

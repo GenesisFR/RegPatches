@@ -312,7 +312,7 @@ if %ERRORLEVEL%==0 (
 ) else (
 	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
 
-	if %ERRORLEVEL%==0 (
+	if !ERRORLEVEL!==0 (
 		set "_PWSH_CMD=pwsh"
 	) else (
         echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%

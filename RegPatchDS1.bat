@@ -73,6 +73,7 @@ if defined _LINUX (
 :admin_check
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
+cls
 echo %cTitle%===============================================================================%cReset%
 echo                      %cTitle%DUNGEON SIEGE 1 REGISTRY PATCHER%cReset%
 echo %cTitle%===============================================================================%cReset%
@@ -84,7 +85,7 @@ if %ERRORLEVEL%==0 (
 	echo:
 	ping -n 2 127.0.0.1 > nul
 ) else (
-    echo %cError%[!] ERROR: administrator rights required.%cReset%
+    echo %cError%[-] ERROR: administrator rights required.%cReset%
     echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
@@ -169,7 +170,7 @@ call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
 if %ERRORLEVEL%==1 (
 	call :install_detection GOG "%_REG_KEY_GOG%" path
 	if %ERRORLEVEL%==1 (
-		echo %cError%[!] ERROR: could not locate the game installation directory.%cReset%
+		echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
 		echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
 		goto end
 	)
@@ -257,7 +258,7 @@ if not defined _LINUX (
 )
 
 rem This is only here to help with development since we should never reach this in practice
-echo %cError%[!] Invalid choice detected.%cReset% & goto end
+echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
 :install_detection
 rem Check where the game is installed from the registry
@@ -662,7 +663,10 @@ if %ERRORLEVEL%==1 (
 		move /Y "%TEMP%\RegPatchDS1.bat" "%~f0" > nul
 	) else (
 		echo %cError%[-] Update failed: you probably don't have an internet connection..%cReset%
-		echo If you're on Windows XP, make sure you have Support Tools installed.
+		echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
+		echo %cInfo%[~] The repository will now be opened in your web browser.%cReset%
+		pause
+		start "" https://github.com/GenesisFR/RegPatches
 	)
 )
 

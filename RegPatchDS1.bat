@@ -44,7 +44,6 @@ if "%~1"=="" (
 	if not defined _CHOICE goto usage
 ) else goto usage
 
-
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Setup ANSI escape character for multi-color output
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
@@ -81,12 +80,12 @@ echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
 
 if %ERRORLEVEL%==0 (
-    echo %cSuccess%[+] Administrator rights detected.%cReset%
+	echo %cSuccess%[+] Administrator rights detected.%cReset%
 	echo:
 	ping -n 2 127.0.0.1 > nul
 ) else (
-    echo %cError%[-] ERROR: administrator rights required.%cReset%
-    echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
+	echo %cError%[-] ERROR: administrator rights required.%cReset%
+	echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
@@ -126,7 +125,7 @@ if %PROCESSOR_ARCHITECTURE%==x86 (
 		set "_PROGRAM_FILES=%ProgramFiles%"
 	)
 )
-				
+
 rem WOW6432Node and /reg:32 aren't present on 32-bit systems
 if %_OS_BITNESS%==32 (
 	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
@@ -147,16 +146,16 @@ echo %cDim%---------------------------------------------------------------------
 rem Check for game executables in the current directory
 if exist DungeonSiege.exe (
 	set "_INSTALL_LOCATION=%CD%"
-    echo %cSuccess%[+] Found DungeonSiege.exe in the current directory.%cReset%
+	echo %cSuccess%[+] Found DungeonSiege.exe in the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 	goto menu
 ) else if exist DSLOA.exe (
 	set "_INSTALL_LOCATION=%CD%"
-    echo %cSuccess%[+] Found DSLOA.exe in the current directory.%cReset%
+	echo %cSuccess%[+] Found DSLOA.exe in the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 	goto menu
 ) else (
-    echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
+	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
 
 	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
 	if defined _LINUX (
@@ -196,14 +195,14 @@ echo %cMenu%[6]%cReset% Redirect ZoneMatch to OpenZone (needed to play online th
 
 rem Hide Windows-specific options on Linux
 if not defined _LINUX (
-    echo %cMenu%[7]%cReset% Create a directory junction in Program Files ^(useful for GameRanger^)
-    echo %cMenu%[8]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
-    echo:
-    echo %cTitle%[ MODDING ]%cReset%
-    echo %cMenu%[9]%cReset% Add the environment variable for Gmax ^(useful when installing SiegeMax^)
+	echo %cMenu%[7]%cReset% Create a directory junction in Program Files ^(useful for GameRanger^)
+	echo %cMenu%[8]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
 	echo:
-    echo %cTitle%[ OTHER ]%cReset%
-    echo %cMenu%[0]%cReset% Check for updates
+	echo %cTitle%[ MODDING ]%cReset%
+	echo %cMenu%[9]%cReset% Add the environment variable for Gmax ^(useful when installing SiegeMax^)
+	echo:
+	echo %cTitle%[ OTHER ]%cReset%
+	echo %cMenu%[0]%cReset% Check for updates
 	echo:
 	echo %cError%[a] Exit%cReset%
 ) else (
@@ -260,6 +259,7 @@ if not defined _LINUX (
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
+rem This subroutine takes 3 parameters: platform, reg key, reg value
 :install_detection
 rem Check where the game is installed from the registry
 echo:
@@ -268,12 +268,12 @@ echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
 for /F "tokens=2*" %%A in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%B"
 
 if "%_INSTALL_LOCATION%"=="" (
-    echo %cError%[-] %1 installation directory not found.%cReset%
+	echo %cError%[-] %1 installation directory not found.%cReset%
 	exit /B 1
 ) else (
 	echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
 	ping -n 2 127.0.0.1 > nul
-    echo %cInfo%[~] Scanning for game executables...%cReset%
+	echo %cInfo%[~] Scanning for game executables...%cReset%
 	echo %cDim%-------------------------------------------------------------------------------%cReset%
 
 	rem Check for game executables in the installation directory
@@ -316,7 +316,7 @@ if %ERRORLEVEL%==0 (
 	if !ERRORLEVEL!==0 (
 		set "_PWSH_CMD=pwsh"
 	) else (
-        echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
+		echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
 		echo Make sure it's installed and is in your PATH environment variable.
 		echo:
 	)
@@ -390,25 +390,25 @@ if not defined _LINUX (
 				for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
 
 				if not defined _IS_CMD_ALLOWED (
-                    echo %cInfo%[~] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
+					echo %cInfo%[~] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
 					echo:
 					pause
 					echo:
-					
+
 					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
 					echo %cSuccess%[+] Whitelisting successful.%cReset%
-                    echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
+					echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
 					ping -n 2 127.0.0.1 > nul
 					call :end
 					cls
 
-					rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect in the current session
+					rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect until the next session
 					cmd /c "%~f0" -c 6
 					exit /B
 				)
 			) else (
-                echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+				echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
 				goto end
 			)
 		)
@@ -446,7 +446,7 @@ if exist "%_CFG_FILE_LOA%" (
 if %_CFG_FILE_FOUND%==0 (
 	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
 ) else (
-    echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
+	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 	ping -n 2 127.0.0.1 > nul
 )
 
@@ -530,13 +530,13 @@ if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%
 mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%" > nul
 
 if %ERRORLEVEL%==0 (
-    echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-    echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.%cReset%
-    echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory.%cReset%
-    echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
+	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.%cReset%
+	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory.%cReset%
+	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
 	ping -n 2 127.0.0.1 > nul
 ) else (
-    echo %cError%[-] Failed to create directory junction.%cReset%
+	echo %cError%[-] Failed to create directory junction.%cReset%
 )
 
 goto end
@@ -551,7 +551,7 @@ if not defined _LINUX (
 	if !_WINVER! GEQ 10 (
 		if !_IS_CFA_ENABLED!==1 (
 			if defined _PWSH_CMD (
-                echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+				echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
 
 				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
 					echo Whitelisting DSLOA.exe...
@@ -577,17 +577,17 @@ if not defined _LINUX (
 					echo Whitelisting DungeonSiege.exe...
 					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
 				)
-				
-                echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
+
+				echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 				ping -n 2 127.0.0.1 > nul
 			) else (
-                echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+				echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
 			)
 		) else (
-            echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
+			echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
 		)
 	) else (
-        echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
+		echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
 	)
 )
 
@@ -598,13 +598,13 @@ goto end
 echo %cInfo%[~] Checking for the Gmax executable...%cReset%
 
 if exist gmax.exe (
-    echo %cInfo%[~] Adding the environment variable for Gmax...%cReset%
+	echo %cInfo%[~] Adding the environment variable for Gmax...%cReset%
 	setx GMAXLOC "%CD%" > nul
 	echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
 	ping -n 2 127.0.0.1 > nul
 ) else (
-    echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
-    echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
+	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
+	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
 	echo:
 	set "_CHOICE="
 	pause

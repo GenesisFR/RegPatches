@@ -614,60 +614,90 @@ if exist gmax.exe (
 
 goto end
 
+rem This subroutine takes 2 parameters: url, file path
+:download
+rem curl was added on Windows 10 (1803)
+curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
+
+rem Fall back to bitsadmin if curl failed or isn't installed
+rem It requires Support Tools on Windows XP
+rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
+if %ERRORLEVEL% NEQ 0 (
+	bitsadmin /transfer updateJob /download /priority foreground "%1" "%2" > nul 2>&1
+	rem bitsadmin /create /download updateJob
+	rem bitsadmin /addfile updateJob "%_URL%" "%TEMP%\RegPatchDS1.bat"
+	rem bitsadmin /setmaxdownloadtime updateJob 5
+	rem bitsadmin /resume updateJob
+	rem bitsadmin /reset
+)
+
+if exist "%2" (
+	echo %cSuccess%[+] Download complete.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else (
+	echo %cError%[-] Download failed: you probably don't have an internet connection..%cReset%
+	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
+	exit /B 1
+)
+
+:open_repo
+echo %cInfo%[~] The repository will now be opened in your web browser.%cReset%
+pause
+start "" https://github.com/GenesisFR/RegPatches
+exit /B
+
 :update
+rem Download repo version file
+echo %cInfo%[i] Downloading the version file from GitHub...%cReset%
+
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
+set "_FILE=%TEMP%\RegPatchDS1_version.txt"
+call :download "%_URL%" "%_FILE%"
+
+rem All download methods failed, open the repo
+if "%ERRORLEVEL%"==1 (
+	call :open_repo
+	goto end
+)
+
 echo %cInfo%[i] Comparing the local version against the version on GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-rem Download repo version file
-set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
-curl --connect-timeout 3 -o "%TEMP%\RegPatchDS1_version.txt" "%_URL%" > nul 2>&1
+rem Store the file content into a variable
 for /f %%G in ('type "%TEMP%\RegPatchDS1_version.txt"') do set _REPO_VERSION=%%G
-del %TEMP%\RegPatchDS1_version.txt
+del "%_FILE%"
 
 rem Compare version numbers (without dots)
-if %_VERSION:.=% LSS %_REPO_VERSION:.=% (
-    echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available.%cReset%
-	echo:
-) else (
-    echo %cInfo%[i] You already have the latest version.%cReset%
+if %_VERSION:.=% GEQ %_REPO_VERSION:.=% (
+	echo %cInfo%[i] You already have the latest version.%cReset%
 	goto end
 )
 
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
+set "_FILE=%TEMP%\RegPatchDS1.bat"
+
+echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available.%cReset%
+echo:
 echo %cTitle%Would you like to download it? [Y,N]: %cReset%
 choice > nul
 
 if %ERRORLEVEL%==1 (
-    echo %cInfo%[~] Downloading the new reg patch...%cReset%
-	rem curl was added in Windows 10 (1803)
-	curl --connect-timeout 5 -o "%TEMP%\RegPatchDS1.bat" "%_URL%" > nul 2>&1
+	echo %cInfo%[~] Downloading the new reg patch...%cReset%
+	call :download "%_URL%" "%_FILE%"
 
-	rem Fall back to bitsadmin if curl failed or isn't installed
-	if %ERRORLEVEL% NEQ 0 (
-		rem Requires Support Tools on XP
-		rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
-		bitsadmin /transfer updateJob /download /priority foreground "%_URL%" "%TEMP%\RegPatchDS1.bat" > nul 2>&1
-		rem bitsadmin /create /download updateJob
-		rem bitsadmin /addfile updateJob "%_URL%" "%TEMP%\RegPatchDS1.bat"
-		rem bitsadmin /setmaxdownloadtime updateJob 5
-		rem bitsadmin /resume updateJob
-		rem bitsadmin /reset
+	rem All download methods failed, open the repo
+	if !ERRORLEVEL!==1 (
+		call :open_repo
+		goto end
 	)
 
-	if exist "%TEMP%\RegPatchDS1.bat" (
-		echo %cSuccess%[+] Update complete.%cReset%
-		ping -n 2 127.0.0.1 > nul
-		rem After replacing the BAT, execution seems to stop so we call :end beforehand
-		call :end
-		move /Y "%~f0" "%~dpn0.v%_VERSION%.bat.bak" > nul
-		move /Y "%TEMP%\RegPatchDS1.bat" "%~f0" > nul
-	) else (
-		echo %cError%[-] Update failed: you probably don't have an internet connection..%cReset%
-		echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
-		echo %cInfo%[~] The repository will now be opened in your web browser.%cReset%
-		pause
-		start "" https://github.com/GenesisFR/RegPatches
-	)
+	echo %cSuccess%[+] Update complete.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	rem After replacing the BAT, execution seems to stop so we call :end beforehand
+	call :end
+	copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
+	move /Y "%_FILE%" "%~f0" > nul & exit /B
 )
 
 goto end

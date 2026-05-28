@@ -22,28 +22,19 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 
 :parse_args
 rem Check and validate arguments
-if "%~1"=="" (
-	rem Do nothing
-	break 2> nul
-) else if /I "%~1"=="-c" (
-	rem It must be a digit between 1 and 10 to match the choices below
-	if "%~2"=="1" set "_CHOICE=%~2"
-	if "%~2"=="2" set "_CHOICE=%~2"
-	if "%~2"=="3" set "_CHOICE=%~2"
-	if "%~2"=="4" set "_CHOICE=%~2"
-	if "%~2"=="5" set "_CHOICE=%~2"
-	if "%~2"=="6" set "_CHOICE=%~2"
+if "%~1"=="" goto multi_color
+if /I not "%~1"=="-c" goto usage
 
-	if not defined _LINUX (
-		if "%~2"=="7" set "_CHOICE=%~2"
-		if "%~2"=="8" set "_CHOICE=%~2"
-		if "%~2"=="9" set "_CHOICE=%~2"
-		if "%~2"=="10" set "_CHOICE=%~2"
-	)
+set "_CHOICE=%~2"
+rem Convert empty arguments or strings to 0
+set /A "_CHOICE+=0"
 
-	if not defined _CHOICE goto usage
-) else goto usage
+rem It must be a digit between 1 and 10 (6 on Linux) to match the choices below
+if %_CHOICE% LSS 1 goto usage
+if %_CHOICE% GTR 10 goto usage
+if defined _LINUX if %_CHOICE% GTR 6 goto usage
 
+:multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Setup ANSI escape character for multi-color output
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
@@ -74,7 +65,7 @@ rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 cls
 echo %cTitle%===============================================================================%cReset%
-echo                      %cTitle%DUNGEON SIEGE 1 REGISTRY PATCHER%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
 echo %cTitle%===============================================================================%cReset%
 echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
@@ -166,8 +157,10 @@ if exist DungeonSiege.exe (
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
 call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
+
 if %ERRORLEVEL%==1 (
 	call :install_detection GOG "%_REG_KEY_GOG%" path
+
 	if %ERRORLEVEL%==1 (
 		echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
 		echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
@@ -179,7 +172,7 @@ if %ERRORLEVEL%==1 (
 rem Selection menu
 cls
 echo %cTitle%===============================================================================%cReset%
-echo                      %cTitle%DUNGEON SIEGE 1 REGISTRY PATCHER%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
 echo %cTitle%===============================================================================%cReset%
 echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
 echo:
@@ -215,46 +208,41 @@ echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press
 echo %cDim%-------------------------------------------------------------------------------%cReset%
 
 rem Automatically make a selection if arguments were passed
+if defined _CHOICE goto process_choice
+
 if not defined _LINUX (
-	if defined _CHOICE (
-		choice /C:1234567890 /N /T 0 /D %_CHOICE%
-	) else (
-		echo %cTitle%Please make a selection [0-a]: %cReset%
-		choice /C:1234567890a /N
-	)
+	echo %cTitle%Please make a selection [0-a]:%cReset%
+	choice /C:0123456789a /N
 ) else (
-	if defined _CHOICE (
-		choice /C:123456 /N /T 0 /D %_CHOICE%
-	) else (
-		echo %cTitle%Please make a selection [0-7]: %cReset%
-		choice /C:1234567 /N
-	)
+	echo %cTitle%Please make a selection [1-7]:%cReset%
+	choice /C:1234567 /N
 )
 
+set "_CHOICE=%ERRORLEVEL%"
+
+:process_choice
 cls
 echo %cTitle%===============================================================================%cReset%
-echo                              %cTitle%PROCESSING SELECTION%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
 echo %cTitle%===============================================================================%cReset%
 echo:
 
-if %ERRORLEVEL%==0 goto menu
-if %ERRORLEVEL%==1 call :ds1 & echo: & call :ds1loa & goto end
-if %ERRORLEVEL%==2 call :ds1 & goto end
-if %ERRORLEVEL%==3 call :ds1loa & goto end
-if %ERRORLEVEL%==4 goto cleanup
-if %ERRORLEVEL%==5 goto export
-if %ERRORLEVEL%==6 goto openzone
+if %_CHOICE%==0 goto menu
+if %_CHOICE%==1 call :ds1 & echo: & call :ds1loa & goto end
+if %_CHOICE%==2 call :ds1 & goto end
+if %_CHOICE%==3 call :ds1loa & goto end
+if %_CHOICE%==4 goto cleanup
+if %_CHOICE%==5 goto export
+if %_CHOICE%==6 goto openzone
 
 rem Don't handle Windows-specific options on Linux
-if not defined _LINUX (
-	if %ERRORLEVEL%==7 goto junction
-	if %ERRORLEVEL%==8 goto controlled
-	if %ERRORLEVEL%==9 goto gmax
-	if %ERRORLEVEL%==10 goto update
-	if %ERRORLEVEL%==11 exit /B
-) else (
-	if %ERRORLEVEL%==7 exit /B
-)
+if defined _LINUX exit /B
+
+if %_CHOICE%==7 goto junction
+if %_CHOICE%==8 goto controlled
+if %_CHOICE%==9 goto gmax
+if %_CHOICE%==10 goto update
+if %_CHOICE%==11 exit /B
 
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
@@ -295,9 +283,7 @@ if "%_INSTALL_LOCATION%"=="" (
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
 
-if %_WINVER% GEQ 10 (
-	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
-)
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
 
 rem The value above is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
@@ -328,7 +314,13 @@ exit /B
 echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
 ping -n 2 127.0.0.1 > nul
 exit /B
 
@@ -336,7 +328,13 @@ exit /B
 echo %cInfo%[~] Adding registry entries for Dungeon Siege: Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
 reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
-echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
 ping -n 2 127.0.0.1 > nul
 exit /B
 
@@ -345,7 +343,13 @@ echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Arann
 ping -n 2 127.0.0.1 > nul
 reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
-echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
 ping -n 2 127.0.0.1 > nul
 goto end
 
@@ -379,49 +383,46 @@ echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
-if not defined _LINUX (
-	call :cfa_check
-	call :powershell_check
+if defined _LINUX goto openzone_edit
+if %_WINVER% LSS 10 goto openzone_edit
+call :cfa_check
+if %_IS_CFA_ENABLED%==0 goto openzone_edit
+call :powershell_check
 
-	if !_WINVER! GEQ 10 (
-		if !_IS_CFA_ENABLED!==1 (
-			if defined _PWSH_CMD (
-				rem Check in the registry if it's already been whitelisted
-				for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do set "_IS_CMD_ALLOWED=%%B"
-
-				if not defined _IS_CMD_ALLOWED (
-					echo %cInfo%[~] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
-					echo:
-					pause
-					echo:
-
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
-
-					echo %cSuccess%[+] Whitelisting successful.%cReset%
-					echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
-					ping -n 2 127.0.0.1 > nul
-					call :end
-					cls
-
-					rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect until the next session
-					cmd /c "%~f0" -c 6
-					exit /B
-				)
-			) else (
-				echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-				goto end
-			)
-		)
-	)
+if not defined _PWSH_CMD (
+	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	goto end
 )
 
+rem Check in the registry if it's already been whitelisted
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do goto openzone_edit
+
+echo %cInfo%[i] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+pause
+echo:
+
+!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+
+echo %cSuccess%[+] Whitelisting successful.%cReset%
+echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
+ping -n 2 127.0.0.1 > nul
+call :end
+cls
+
+rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect until the next session
+cmd /c "%~f0" -c 6
+exit /B
+
+:openzone_edit
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
 for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%B"
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
-set "_CFG_FILE_FOUND=0"
 
 rem Update the DS config file if it exists
 if exist "%_CFG_FILE_DS%" (
@@ -443,13 +444,13 @@ if exist "%_CFG_FILE_LOA%" (
 	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 
-if %_CFG_FILE_FOUND%==0 (
-	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
-) else (
+if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
-	ping -n 2 127.0.0.1 > nul
+) else (
+	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
 )
 
+ping -n 2 127.0.0.1 > nul
 setlocal DisableDelayedExpansion
 goto end
 
@@ -534,62 +535,63 @@ if %ERRORLEVEL%==0 (
 	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.%cReset%
 	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory.%cReset%
 	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
-	ping -n 2 127.0.0.1 > nul
 ) else (
 	echo %cError%[-] Failed to create directory junction.%cReset%
 )
 
+ping -n 2 127.0.0.1 > nul
 goto end
 
 :controlled
-setlocal EnableDelayedExpansion
-
-if not defined _LINUX (
-	call :cfa_check
-	call :powershell_check
-
-	if !_WINVER! GEQ 10 (
-		if !_IS_CFA_ENABLED!==1 (
-			if defined _PWSH_CMD (
-				echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
-
-				if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-					echo Whitelisting DSLOA.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
-					echo Whitelisting DSLOAMod.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DSMod.exe" (
-					echo Whitelisting DSMod.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
-					echo Whitelisting DSVideoConfig.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-					echo Whitelisting DungeonSiege.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
-				)
-
-				echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
-				ping -n 2 127.0.0.1 > nul
-			) else (
-				echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-			)
-		) else (
-			echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
-		)
-	) else (
-		echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
-	)
+if %_WINVER% LSS 10 (
+	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
+	goto end
 )
+
+call :cfa_check
+
+if %_IS_CFA_ENABLED%==0 (
+	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
+	goto end
+)
+
+call :powershell_check
+
+if not defined _PWSH_CMD (
+	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+	goto end
+)
+
+setlocal EnableDelayedExpansion
+echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+
+if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+	echo Whitelisting DSLOA.exe...
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
+)
+
+if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
+	echo Whitelisting DSLOAMod.exe...
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
+)
+
+if exist "%_INSTALL_LOCATION%\DSMod.exe" (
+	echo Whitelisting DSMod.exe...
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
+)
+
+if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
+	echo Whitelisting DSVideoConfig.exe...
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
+)
+
+if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+	echo Whitelisting DungeonSiege.exe...
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
+)
+
+echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
+ping -n 2 127.0.0.1 > nul
 
 setlocal DisableDelayedExpansion
 goto end
@@ -608,7 +610,6 @@ if exist gmax.exe (
 	echo:
 	set "_CHOICE="
 	pause
-	cls
 	goto menu
 )
 
@@ -629,6 +630,7 @@ if %ERRORLEVEL% NEQ 0 (
 	rem bitsadmin /setmaxdownloadtime updateJob 5
 	rem bitsadmin /resume updateJob
 	rem bitsadmin /reset
+	rem bitsadmin /complete updateJob
 )
 
 if exist "%2" (
@@ -679,7 +681,7 @@ set "_FILE=%TEMP%\RegPatchDS1.bat"
 
 echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available.%cReset%
 echo:
-echo %cTitle%Would you like to download it? [Y,N]: %cReset%
+echo %cTitle%Would you like to download it? [Y,N]:%cReset%
 choice > nul
 
 if %ERRORLEVEL%==1 (
@@ -703,13 +705,12 @@ if %ERRORLEVEL%==1 (
 goto end
 
 :usage
+set "_LAST_OPTION_ID=10"
+if defined _LINUX set "_LAST_OPTION_ID=6"
+
 echo Usage:
 echo:
-if not defined _LINUX (
-	echo %~0 -c X ^(where X is a number between 1 and 10^)
-) else (
-	echo %~0 -c X ^(where X is a number between 1 and 7^)
-)
+echo %~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)
 
 :end
 echo:

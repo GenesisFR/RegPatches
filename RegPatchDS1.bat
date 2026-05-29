@@ -207,6 +207,11 @@ echo:
 echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press 1.
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 
+rem Double the trailing backslash from the installation directory as it's interpreted as an escape character by the REG commands, which causes them
+rem to not work correctly when the game is installed at the root of a drive
+set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
+if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
+
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE goto process_choice
 
@@ -292,7 +297,7 @@ set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
 exit /B
 
 :powershell_check
-rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
 for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
@@ -314,7 +319,7 @@ exit /B
 :ds1
 echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
-reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
@@ -328,7 +333,7 @@ exit /B
 :ds1loa
 echo %cInfo%[~] Adding registry entries for Dungeon Siege: Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
-reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
+reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
@@ -383,7 +388,7 @@ setlocal EnableDelayedExpansion
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the attrib/move commands won't work)
+rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the ATTRIB and MOVE commands won't work)
 if defined _LINUX goto openzone_edit
 if %_WINVER% LSS 10 goto openzone_edit
 call :cfa_check

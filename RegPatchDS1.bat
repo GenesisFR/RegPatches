@@ -696,6 +696,7 @@ if %ERRORLEVEL%==1 (
 
 	rem Back up the old reg patch and replace it with the new one
 	copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
+	attrib -R "%~0"
 	move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
 )
 

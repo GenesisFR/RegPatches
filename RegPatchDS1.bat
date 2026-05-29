@@ -67,12 +67,10 @@ if defined _LINUX if %_CHOICE% GTR 6 goto usage
 rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
 if defined _LINUX goto init
 
+call :display_header
+
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
-cls
-echo %cTitle%================================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
-echo %cTitle%================================================================================%cReset%
 echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
 
@@ -172,10 +170,7 @@ if %ERRORLEVEL%==1 (
 
 :menu
 rem Selection menu
-cls
-echo %cTitle%================================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
-echo %cTitle%================================================================================%cReset%
+call :display_header
 echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
 echo:
 echo %cTitle%[ REGISTRY PATCHING ]%cReset%
@@ -228,10 +223,7 @@ if not defined _LINUX (
 set "_CHOICE=%ERRORLEVEL%"
 
 :process_choice
-cls
-echo %cTitle%================================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
-echo %cTitle%================================================================================%cReset%
+call :display_header
 echo:
 
 rem That's the result of a Ctrl+C
@@ -335,6 +327,13 @@ set "cSuccess="
 set "cError="
 set "cInfo="
 set "cDim="
+exit /B
+
+:display_header
+cls
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
 exit /B
 
 :download [url] [file_path]
@@ -703,13 +702,14 @@ if %ERRORLEVEL%==1 (
 goto end
 
 :usage
+call :display_header
+
 set "_LAST_OPTION_ID=10"
 if defined _LINUX set "_LAST_OPTION_ID=6"
 
-echo %cDim%--------------------------------------------------------------------------------%cReset%
-echo Usage:
+echo %cInfo%Usage:%cReset%
 echo:
-echo %~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)
+echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)%cReset%
 goto end
 
 :end

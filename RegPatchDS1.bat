@@ -64,9 +64,9 @@ if defined _LINUX (
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 cls
-echo %cTitle%===============================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
-echo %cTitle%===============================================================================%cReset%
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
 echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
 
@@ -132,7 +132,7 @@ if not defined _LINUX (
 :exe_check
 echo %cInfo%[~] Current directory:%cReset% %CD%
 echo %cInfo%[~] Scanning for game executables...%cReset%
-echo %cDim%-------------------------------------------------------------------------------%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 
 rem Check for game executables in the current directory
 if exist DungeonSiege.exe (
@@ -171,9 +171,9 @@ if %ERRORLEVEL%==1 (
 :menu
 rem Selection menu
 cls
-echo %cTitle%===============================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
-echo %cTitle%===============================================================================%cReset%
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
 echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
 echo:
 echo %cTitle%[ REGISTRY PATCHING ]%cReset%
@@ -205,7 +205,7 @@ if not defined _LINUX (
 
 echo:
 echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press 1.
-echo %cDim%-------------------------------------------------------------------------------%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE goto process_choice
@@ -222,12 +222,14 @@ set "_CHOICE=%ERRORLEVEL%"
 
 :process_choice
 cls
-echo %cTitle%===============================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                %cReset%
-echo %cTitle%===============================================================================%cReset%
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
 echo:
 
+rem That's the result of a Ctrl+C
 if %_CHOICE%==0 goto menu
+
 if %_CHOICE%==1 call :ds1 & echo: & call :ds1loa & goto end
 if %_CHOICE%==2 call :ds1 & goto end
 if %_CHOICE%==3 call :ds1loa & goto end
@@ -247,8 +249,7 @@ if %_CHOICE%==11 exit /B
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
-rem This subroutine takes 3 parameters: platform, reg key, reg value
-:install_detection
+:install_detection [platform] [reg_key] [reg_value]
 rem Check where the game is installed from the registry
 echo:
 echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
@@ -262,7 +263,7 @@ if "%_INSTALL_LOCATION%"=="" (
 	echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
 	ping -n 2 127.0.0.1 > nul
 	echo %cInfo%[~] Scanning for game executables...%cReset%
-	echo %cDim%-------------------------------------------------------------------------------%cReset%
+	echo %cDim%--------------------------------------------------------------------------------%cReset%
 
 	rem Check for game executables in the installation directory
 	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
@@ -316,7 +317,7 @@ ping -n 2 127.0.0.1 > nul
 reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
-	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
 ) else (
 	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 )
@@ -330,7 +331,7 @@ ping -n 2 127.0.0.1 > nul
 reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
-	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
 ) else (
 	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 )
@@ -345,7 +346,7 @@ reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
 
 if %ERRORLEVEL%==1 (
-	echo %cError%[+] ERROR: failed to add registry entries.%cReset%
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
 ) else (
 	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 )
@@ -533,7 +534,7 @@ mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%" > n
 if %ERRORLEVEL%==0 (
 	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
 	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.%cReset%
-	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory.%cReset%
+	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
 	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
 ) else (
 	echo %cError%[-] Failed to create directory junction.%cReset%
@@ -597,30 +598,20 @@ if exist gmax.exe (
 ) else (
 	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
 	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
-	echo:
-	set "_CHOICE="
-	pause
-	goto menu
 )
 
 goto end
 
-rem This subroutine takes 2 parameters: url, file path
-:download
+:download [url] [file_path]
 rem curl was added on Windows 10 (1803)
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to bitsadmin if curl failed or isn't installed
-rem It requires Support Tools on Windows XP
+rem It requires Support Tools on Windows XP, however it doesn't seem to work
 rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
-if %ERRORLEVEL% NEQ 0 (
-	bitsadmin /transfer updateJob /download /priority foreground "%1" "%2" > nul 2>&1
-	rem bitsadmin /create /download updateJob
-	rem bitsadmin /addfile updateJob "%_URL%" "%TEMP%\RegPatchDS1.bat"
-	rem bitsadmin /setmaxdownloadtime updateJob 5
-	rem bitsadmin /resume updateJob
-	rem bitsadmin /reset
-	rem bitsadmin /complete updateJob
+rem It also may not work on Windows Vista, Windows 7 and Windows 8
+if not exist "%2" (
+	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
 )
 
 if exist "%2" (
@@ -628,20 +619,20 @@ if exist "%2" (
 	ping -n 2 127.0.0.1 > nul
 	exit /B
 ) else (
-	echo %cError%[-] Download failed: you probably don't have an internet connection..%cReset%
+	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
 	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
 	exit /B 1
 )
 
 :open_repo
-echo %cInfo%[~] The repository will now be opened in your web browser.%cReset%
+echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
 pause
 start "" https://github.com/GenesisFR/RegPatches
 exit /B
 
 :update
 rem Download repo version file
-echo %cInfo%[i] Downloading the version file from GitHub...%cReset%
+echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
 
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
 set "_FILE=%TEMP%\RegPatchDS1_version.txt"
@@ -653,7 +644,7 @@ if "%ERRORLEVEL%"==1 (
 	goto end
 )
 
-echo %cInfo%[i] Comparing the local version against the version on GitHub...%cReset%
+echo %cInfo%[~] Comparing the local version against the version on GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 rem Store the file content into a variable
@@ -669,12 +660,13 @@ if %_VERSION:.=% GEQ %_REPO_VERSION:.=% (
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
 set "_FILE=%TEMP%\RegPatchDS1.bat"
 
-echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available.%cReset%
+echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available! %cReset%
 echo:
-echo %cTitle%Would you like to download it? [Y,N]:%cReset%
-choice > nul
+echo %cTitle%Would you like to update? [Y,N]%cReset%
+choice /N
 
 if %ERRORLEVEL%==1 (
+	echo:
 	echo %cInfo%[~] Downloading the new reg patch...%cReset%
 	call :download "%_URL%" "%_FILE%"
 
@@ -686,10 +678,10 @@ if %ERRORLEVEL%==1 (
 
 	echo %cSuccess%[+] Update complete.%cReset%
 	ping -n 2 127.0.0.1 > nul
-	rem After replacing the BAT, execution seems to stop so we call :end beforehand
-	call :end
+
+	rem Back up the old reg patch and replace it with the new one
 	copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
-	move /Y "%_FILE%" "%~f0" > nul & exit /B
+	move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
 )
 
 goto end
@@ -704,9 +696,9 @@ echo %~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)
 
 :end
 echo:
-echo %cTitle%===============================================================================%cReset%
+echo %cTitle%================================================================================%cReset%
 echo %cInfo%[~] Exiting...%cReset%
-echo %cTitle%===============================================================================%cReset%
+echo %cTitle%================================================================================%cReset%
 echo:
 pause
 endlocal

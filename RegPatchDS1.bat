@@ -20,9 +20,38 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 dpath > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 
+:windows_version
+rem Store the Windows version
+if not defined _LINUX (
+	setlocal EnableDelayedExpansion
+	rem Extract just the major version number
+	for /f "tokens=2* delims=[." %%i in ('ver') do (
+		set "_WINVER=%%i"
+		rem We're left with just "Version x"
+		for /f "tokens=2 delims= " %%j in ('echo !_WINVER!') do set "_WINVER=%%j"
+	)
+	setlocal DisableDelayedExpansion
+)
+
+:multi_color
+rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
+rem Set up ANSI escape character for multi-color output on Windows 10 or later
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+set "cReset=%ESC%[0m"
+set "cTitle=%ESC%[96m"
+set "cMenu=%ESC%[93m"
+set "cSuccess=%ESC%[92m"
+set "cError=%ESC%[91m"
+set "cInfo=%ESC%[94m"
+set "cDim=%ESC%[90m"
+
+rem Disable multi-color output on unsupported systems
+if defined _LINUX call :disable_multi_color & goto parse_args
+if %_WINVER% LSS 10 call :disable_multi_color
+
 :parse_args
 rem Check and validate arguments
-if "%~1"=="" goto multi_color
+if "%~1"=="" goto admin_check
 if /I not "%~1"=="-c" goto usage
 
 set "_CHOICE=%~2"
@@ -34,33 +63,12 @@ if %_CHOICE% LSS 1 goto usage
 if %_CHOICE% GTR 10 goto usage
 if defined _LINUX if %_CHOICE% GTR 6 goto usage
 
-:multi_color
-rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
-rem Setup ANSI escape character for multi-color output
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
-set "cReset=%ESC%[0m"
-set "cTitle=%ESC%[96m"
-set "cMenu=%ESC%[93m"
-set "cSuccess=%ESC%[92m"
-set "cError=%ESC%[91m"
-set "cInfo=%ESC%[94m"
-set "cDim=%ESC%[90m"
-
+:admin_check
 if defined _LINUX (
-	rem No multi-color output support
-	set "cReset="
-	set "cTitle="
-	set "cMenu="
-	set "cSuccess="
-	set "cError="
-	set "cInfo="
-	set "cDim="
-
 	rem Skip the admin check, otherwise we'll be stuck in an endless loop
 	goto init
 )
 
-:admin_check
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 cls
@@ -123,10 +131,6 @@ if %_OS_BITNESS%==32 (
 	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
 	set "_REG_ARG="
 	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
-)
-rem Store the Windows version
-if not defined _LINUX (
-	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
 )
 
 :exe_check
@@ -314,6 +318,16 @@ if %ERRORLEVEL%==0 (
 	)
 )
 
+exit /B
+
+:disable_multi_color
+set "cReset="
+set "cTitle="
+set "cMenu="
+set "cSuccess="
+set "cError="
+set "cInfo="
+set "cDim="
 exit /B
 
 :ds1

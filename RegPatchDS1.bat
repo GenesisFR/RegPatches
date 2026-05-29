@@ -655,10 +655,7 @@ set "_FILE=%TEMP%\RegPatchDS1_version.txt"
 call :download "%_URL%" "%_FILE%"
 
 rem All download methods failed, open the repo
-if "%ERRORLEVEL%"==1 (
-	call :open_repo
-	goto end
-)
+if %ERRORLEVEL%==1 call :open_repo & goto end
 
 echo %cInfo%[~] Comparing the local version against the version on GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
@@ -687,10 +684,9 @@ if %ERRORLEVEL%==1 (
 	call :download "%_URL%" "%_FILE%"
 
 	rem All download methods failed, open the repo
-	if !ERRORLEVEL!==1 (
-		call :open_repo
-		goto end
-	)
+	setlocal EnableDelayedExpansion
+	if !ERRORLEVEL!==1 call :open_repo & goto end
+	setlocal DisableDelayedExpansion
 
 	echo %cSuccess%[+] Update complete.%cReset%
 	ping -n 2 127.0.0.1 > nul

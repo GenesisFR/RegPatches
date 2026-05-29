@@ -528,17 +528,17 @@ exit /B
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
+rem for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
 
 echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
-mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%" > nul
+if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul
 
 if %ERRORLEVEL%==0 (
 	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.%cReset%
+	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 1" to add the game to GameRanger.%cReset%
 	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
 	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
 ) else (

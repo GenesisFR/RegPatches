@@ -211,8 +211,8 @@ rem Automatically make a selection if arguments were passed
 if defined _CHOICE goto process_choice
 
 if not defined _LINUX (
-	echo %cTitle%Please make a selection [0-a]:%cReset%
-	choice /C:0123456789a /N
+	echo %cTitle%Please make a selection [1-a]:%cReset%
+	choice /C:1234567890a /N
 ) else (
 	echo %cTitle%Please make a selection [1-7]:%cReset%
 	choice /C:1234567 /N

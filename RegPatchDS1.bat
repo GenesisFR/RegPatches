@@ -64,10 +64,8 @@ if %_CHOICE% GTR 10 goto usage
 if defined _LINUX if %_CHOICE% GTR 6 goto usage
 
 :admin_check
-if defined _LINUX (
-	rem Skip the admin check, otherwise we'll be stuck in an endless loop
-	goto init
-)
+rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
+if defined _LINUX goto init
 
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
@@ -258,6 +256,239 @@ if %_CHOICE%==11 exit /B
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
+:cfa_check
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+
+for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+
+rem The value above is hexadecimal so we need to convert it to decimal
+set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
+
+exit /B
+
+:cfa_whitelist [exe]
+if exist "%_INSTALL_LOCATION%\%1" (
+	echo %cInfo%[~] Whitelisting %1... %cReset%
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
+)
+
+exit /B
+
+:cfa_whitelist_all
+if %_WINVER% LSS 10 (
+	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
+	goto end
+)
+
+call :cfa_check
+
+if %_IS_CFA_ENABLED%==0 (
+	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
+	goto end
+)
+
+call :powershell_check
+
+if not defined _PWSH_CMD (
+	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+	goto end
+)
+
+echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+setlocal EnableDelayedExpansion
+call :cfa_whitelist DSLOA.exe
+call :cfa_whitelist DSLOAMod.exe
+call :cfa_whitelist DSMod.exe
+call :cfa_whitelist DSVideoConfig.exe
+call :cfa_whitelist DungeonSiege.exe
+setlocal DisableDelayedExpansion
+
+echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+goto end
+
+:cleanup
+echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
+reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+goto end
+
+:disable_multi_color
+set "cReset="
+set "cTitle="
+set "cMenu="
+set "cSuccess="
+set "cError="
+set "cInfo="
+set "cDim="
+exit /B
+
+:download [url] [file_path]
+rem curl was added on Windows 10 (1803)
+curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
+
+rem Fall back to bitsadmin if curl failed or isn't installed
+rem It requires Support Tools on Windows XP, however it doesn't seem to work
+rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
+rem It also may not work on Windows Vista, Windows 7 and Windows 8
+if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
+
+if exist "%2" (
+	echo %cSuccess%[+] Download complete.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else (
+	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
+	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
+	exit /B 1
+)
+
+:ds1
+echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
+ping -n 2 127.0.0.1 > nul
+reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
+
+:ds1loa
+echo %cInfo%[~] Adding registry entries for Dungeon Siege: Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
+
+:edit_ini
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
+rem Store the beginning of the config file to a temp file
+set "_CFG_FILE=%~1"
+set "_CFG_FILE_TEMP=%~1.tmp"
+set "_TARGET_SECTION=multiplayer"
+
+if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
+set "_IN_SECTION=0"
+
+rem Read the config file line by line
+rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
+for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
+	set "_LINE=%%L"
+
+	rem Section detection logic
+	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
+		for /F "delims=[]" %%S in ("!_LINE!") do (
+			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
+		)
+	)
+
+	rem Write the current line to the temp file until we reach the MP section
+	if !_IN_SECTION!==0 (
+		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
+	) else (
+		rem Append the MP section to the temp file
+		(
+			echo:
+			echo [multiplayer]
+			echo gun_server = gz.exsurge.net
+			echo gun_server_port = 2300
+			echo news_server = gz.exsurge.net
+			echo news_server_port = 2301
+			echo news_server_file = news.txt
+			echo autoupdate_server = gz.exsurge.net
+			echo autoupdate_proxy = gz.exsurge.net
+			echo:
+			echo [debug]
+		) >> "%_CFG_FILE_TEMP%"
+
+		exit /B
+	)
+)
+
+rem No MP section was found
+if !_IN_SECTION!==0 (
+	rem Append the MP section to the temp file
+	(
+		echo:
+		echo [multiplayer]
+		echo gun_server = gz.exsurge.net
+		echo gun_server_port = 2300
+		echo news_server = gz.exsurge.net
+		echo news_server_port = 2301
+		echo news_server_file = news.txt
+		echo autoupdate_server = gz.exsurge.net
+		echo autoupdate_proxy = gz.exsurge.net
+		echo:
+		echo [debug]
+	) >> "%_CFG_FILE_TEMP%"
+)
+
+exit /B
+
+:export
+rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
+rem Double backslashes in the install directory path
+set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
+
+echo %cInfo%[~] Exporting registry entries for Dungeon Siege and Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+(
+	echo REGEDIT4
+	echo:
+	echo [%_MS_DS_EXPORT%]
+	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo:
+	echo [%_MS_LOA_EXPORT%]
+	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+) > %_REG_FILE%
+
+echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
+echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+goto end
+
+:gmax
+echo %cInfo%[~] Checking for the Gmax executable...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+if exist gmax.exe (
+	echo %cInfo%[~] Adding the environment variable for Gmax...%cReset%
+	setx GMAXLOC "%CD%" > nul
+	echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
+) else (
+	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
+	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+goto end
+
 :install_detection [platform] [reg_key] [reg_value]
 rem Check where the game is installed from the registry
 echo:
@@ -289,113 +520,34 @@ if "%_INSTALL_LOCATION%"=="" (
 	)
 )
 
-:cfa_check
-rem Check in the registry if Controlled Folder Access is enabled
-set "_IS_CFA_ENABLED=0"
+:junction
+rem https://stackoverflow.com/a/8071683
+rem Get the install directory name
+rem for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
 
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
+ping -n 2 127.0.0.1 > nul
 
-rem The value above is hexadecimal so we need to convert it to decimal
-set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
-
-exit /B
-
-:powershell_check
-rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
-for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
+if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul
 
 if %ERRORLEVEL%==0 (
-	set "_PWSH_CMD=powershell"
+	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 1" to add the game to GameRanger.%cReset%
+	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
+	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
 ) else (
-	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
-
-	if !ERRORLEVEL!==0 (
-		set "_PWSH_CMD=pwsh"
-	) else (
-		echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
-		echo Make sure it's installed and is in your PATH environment variable.
-		echo:
-	)
-)
-
-exit /B
-
-:disable_multi_color
-set "cReset="
-set "cTitle="
-set "cMenu="
-set "cSuccess="
-set "cError="
-set "cInfo="
-set "cDim="
-exit /B
-
-:ds1
-echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
-ping -n 2 127.0.0.1 > nul
-reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
-
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
-
-ping -n 2 127.0.0.1 > nul
-exit /B
-
-:ds1loa
-echo %cInfo%[~] Adding registry entries for Dungeon Siege: Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
-reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
-
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
-
-ping -n 2 127.0.0.1 > nul
-exit /B
-
-:cleanup
-echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
-reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
-
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+	echo %cError%[-] Failed to create directory junction.%cReset%
 )
 
 ping -n 2 127.0.0.1 > nul
 goto end
 
-:export
-rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
-rem Double backslashes in the install directory path
-set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
-
-echo %cInfo%[~] Exporting registry entries for Dungeon Siege and Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
-
-(
-	echo REGEDIT4
-	echo:
-	echo [%_MS_DS_EXPORT%]
-	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-	echo:
-	echo [%_MS_LOA_EXPORT%]
-	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-) > %_REG_FILE%
-
-echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
-echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
-ping -n 2 127.0.0.1 > nul
-
-goto end
+:open_repo
+echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
+pause
+start "" https://github.com/GenesisFR/RegPatches
+exit /B
 
 :openzone
 setlocal EnableDelayedExpansion
@@ -475,179 +627,24 @@ if defined _CFG_FILE_FOUND (
 ping -n 2 127.0.0.1 > nul
 goto end
 
-:edit_ini
-rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
-rem Store the beginning of the config file to a temp file
-set "_CFG_FILE=%~1"
-set "_CFG_FILE_TEMP=%~1.tmp"
-set "_TARGET_SECTION=multiplayer"
-
-if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
-set "_IN_SECTION=0"
-
-rem Read the config file line by line
-rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
-for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
-	set "_LINE=%%L"
-
-	rem Section detection logic
-	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /F "delims=[]" %%S in ("!_LINE!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
-		)
-	)
-
-	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION!==0 (
-		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
-	) else (
-		rem Append the MP section to the temp file
-		(
-			echo:
-			echo [multiplayer]
-			echo gun_server = gz.exsurge.net
-			echo gun_server_port = 2300
-			echo news_server = gz.exsurge.net
-			echo news_server_port = 2301
-			echo news_server_file = news.txt
-			echo autoupdate_server = gz.exsurge.net
-			echo autoupdate_proxy = gz.exsurge.net
-			echo:
-			echo [debug]
-		) >> "%_CFG_FILE_TEMP%"
-
-		exit /B
-	)
-)
-
-rem No MP section was found
-if !_IN_SECTION!==0 (
-	rem Append the MP section to the temp file
-	(
-		echo:
-		echo [multiplayer]
-		echo gun_server = gz.exsurge.net
-		echo gun_server_port = 2300
-		echo news_server = gz.exsurge.net
-		echo news_server_port = 2301
-		echo news_server_file = news.txt
-		echo autoupdate_server = gz.exsurge.net
-		echo autoupdate_proxy = gz.exsurge.net
-		echo:
-		echo [debug]
-	) >> "%_CFG_FILE_TEMP%"
-)
-
-exit /B
-
-:junction
-rem https://stackoverflow.com/a/8071683
-rem Get the install directory name
-rem for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
-
-echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
-ping -n 2 127.0.0.1 > nul
-
-if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
-mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul
+:powershell_check
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
+for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
-	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 1" to add the game to GameRanger.%cReset%
-	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
-	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
+	set "_PWSH_CMD=powershell"
 ) else (
-	echo %cError%[-] Failed to create directory junction.%cReset%
+	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
+
+	if !ERRORLEVEL!==0 (
+		set "_PWSH_CMD=pwsh"
+	) else (
+		echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
+		echo Make sure it's installed and is in your PATH environment variable.
+		echo:
+	)
 )
 
-ping -n 2 127.0.0.1 > nul
-goto end
-
-:cfa_whitelist_all
-if %_WINVER% LSS 10 (
-	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
-	goto end
-)
-
-call :cfa_check
-
-if %_IS_CFA_ENABLED%==0 (
-	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
-	goto end
-)
-
-call :powershell_check
-
-if not defined _PWSH_CMD (
-	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-	goto end
-)
-
-echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
-ping -n 2 127.0.0.1 > nul
-
-setlocal EnableDelayedExpansion
-call :cfa_whitelist DSLOA.exe
-call :cfa_whitelist DSLOAMod.exe
-call :cfa_whitelist DSMod.exe
-call :cfa_whitelist DSVideoConfig.exe
-call :cfa_whitelist DungeonSiege.exe
-setlocal DisableDelayedExpansion
-
-echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
-ping -n 2 127.0.0.1 > nul
-
-goto end
-
-:cfa_whitelist [exe]
-if exist "%_INSTALL_LOCATION%\%1" (
-	echo %cInfo%[~] Whitelisting %1... %cReset%
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
-)
-
-exit /B
-
-:gmax
-echo %cInfo%[~] Checking for the Gmax executable...%cReset%
-
-if exist gmax.exe (
-	echo %cInfo%[~] Adding the environment variable for Gmax...%cReset%
-	setx GMAXLOC "%CD%" > nul
-	echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
-	ping -n 2 127.0.0.1 > nul
-) else (
-	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
-	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
-)
-
-goto end
-
-:download [url] [file_path]
-rem curl was added on Windows 10 (1803)
-curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
-
-rem Fall back to bitsadmin if curl failed or isn't installed
-rem It requires Support Tools on Windows XP, however it doesn't seem to work
-rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
-rem It also may not work on Windows Vista, Windows 7 and Windows 8
-if not exist "%2" (
-	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
-)
-
-if exist "%2" (
-	echo %cSuccess%[+] Download complete.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	exit /B
-) else (
-	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
-	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
-	exit /B 1
-)
-
-:open_repo
-echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
-pause
-start "" https://github.com/GenesisFR/RegPatches
 exit /B
 
 :update
@@ -713,6 +710,7 @@ if defined _LINUX set "_LAST_OPTION_ID=6"
 echo Usage:
 echo:
 echo %~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)
+goto end
 
 :end
 echo:

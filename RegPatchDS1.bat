@@ -239,7 +239,7 @@ rem Don't handle Windows-specific options on Linux
 if defined _LINUX exit /B
 
 if %_CHOICE%==7 goto junction
-if %_CHOICE%==8 goto controlled
+if %_CHOICE%==8 goto cfa_whitelist_all
 if %_CHOICE%==9 goto gmax
 if %_CHOICE%==10 goto update
 if %_CHOICE%==11 exit /B
@@ -542,7 +542,7 @@ if %ERRORLEVEL%==0 (
 ping -n 2 127.0.0.1 > nul
 goto end
 
-:controlled
+:cfa_whitelist_all
 if %_WINVER% LSS 10 (
 	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
 	goto end
@@ -564,37 +564,27 @@ if not defined _PWSH_CMD (
 
 setlocal EnableDelayedExpansion
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+ping -n 2 127.0.0.1 > nul
 
-if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-	echo Whitelisting DSLOA.exe...
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOA.exe' > nul 2>&1
-)
-
-if exist "%_INSTALL_LOCATION%\DSLOAMod.exe" (
-	echo Whitelisting DSLOAMod.exe...
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSLOAMod.exe' > nul 2>&1
-)
-
-if exist "%_INSTALL_LOCATION%\DSMod.exe" (
-	echo Whitelisting DSMod.exe...
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSMod.exe' > nul 2>&1
-)
-
-if exist "%_INSTALL_LOCATION%\DSVideoConfig.exe" (
-	echo Whitelisting DSVideoConfig.exe...
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DSVideoConfig.exe' > nul 2>&1
-)
-
-if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-	echo Whitelisting DungeonSiege.exe...
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege.exe' > nul 2>&1
-)
+call :cfa_whitelist DSLOA.exe
+call :cfa_whitelist DSLOAMod.exe
+call :cfa_whitelist DSMod.exe
+call :cfa_whitelist DSVideoConfig.exe
+call :cfa_whitelist DungeonSiege.exe
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 ping -n 2 127.0.0.1 > nul
 
 setlocal DisableDelayedExpansion
 goto end
+
+:cfa_whitelist [exe]
+if exist "%_INSTALL_LOCATION%\%1" (
+	echo %cInfo%[~] Whitelisting %1... %cReset%
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
+)
+
+exit /B
 
 :gmax
 echo %cInfo%[~] Checking for the Gmax executable...%cReset%

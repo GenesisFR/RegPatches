@@ -402,7 +402,7 @@ setlocal EnableDelayedExpansion
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-rem Add cmd.exe to the Controlled Folder Access whitelist (otherwise the ATTRIB and MOVE commands won't work)
+rem Whitelist cmd.exe in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
 if defined _LINUX goto openzone_edit
 if %_WINVER% LSS 10 goto openzone_edit
 call :cfa_check
@@ -464,6 +464,8 @@ if exist "%_CFG_FILE_LOA%" (
 	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
 )
 
+setlocal DisableDelayedExpansion
+
 if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 ) else (
@@ -471,7 +473,6 @@ if defined _CFG_FILE_FOUND (
 )
 
 ping -n 2 127.0.0.1 > nul
-setlocal DisableDelayedExpansion
 goto end
 
 :edit_ini
@@ -582,20 +583,20 @@ if not defined _PWSH_CMD (
 	goto end
 )
 
-setlocal EnableDelayedExpansion
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
 ping -n 2 127.0.0.1 > nul
 
+setlocal EnableDelayedExpansion
 call :cfa_whitelist DSLOA.exe
 call :cfa_whitelist DSLOAMod.exe
 call :cfa_whitelist DSMod.exe
 call :cfa_whitelist DSVideoConfig.exe
 call :cfa_whitelist DungeonSiege.exe
+setlocal DisableDelayedExpansion
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 ping -n 2 127.0.0.1 > nul
 
-setlocal DisableDelayedExpansion
 goto end
 
 :cfa_whitelist [exe]

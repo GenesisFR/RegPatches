@@ -296,6 +296,7 @@ if not defined _PWSH_CMD (
 )
 
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 ping -n 2 127.0.0.1 > nul
 
 setlocal EnableDelayedExpansion
@@ -318,9 +319,9 @@ reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
 
 if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+	echo %cError%[-] ERROR: failed to remove registry entries.%cReset%
 ) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+	echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
 )
 
 ping -n 2 127.0.0.1 > nul
@@ -474,6 +475,7 @@ goto end
 
 :gmax
 echo %cInfo%[~] Checking for the Gmax executable...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 ping -n 2 127.0.0.1 > nul
 
 if exist gmax.exe (
@@ -657,6 +659,7 @@ call :download "%_URL%" "%_FILE%"
 rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 echo %cInfo%[~] Comparing the local version against the version on GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -679,7 +682,7 @@ echo %cTitle%Would you like to update? [Y,N]%cReset%
 choice /N
 
 if %ERRORLEVEL%==1 (
-	echo:
+	echo %cDim%--------------------------------------------------------------------------------%cReset%
 	echo %cInfo%[~] Downloading the new reg patch...%cReset%
 	call :download "%_URL%" "%_FILE%"
 
@@ -702,6 +705,7 @@ goto end
 set "_LAST_OPTION_ID=10"
 if defined _LINUX set "_LAST_OPTION_ID=6"
 
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 echo Usage:
 echo:
 echo %~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)

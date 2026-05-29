@@ -25,10 +25,10 @@ rem Store the Windows version
 if not defined _LINUX (
 	setlocal EnableDelayedExpansion
 	rem Extract just the major version number
-	for /f "tokens=2* delims=[." %%i in ('ver') do (
-		set "_WINVER=%%i"
+	for /f "tokens=2* delims=[." %%G in ('ver') do (
+		set "_WINVER=%%G"
 		rem We're left with just "Version x"
-		for /f "tokens=2 delims= " %%j in ('echo !_WINVER!') do set "_WINVER=%%j"
+		for /f "tokens=2 delims= " %%H in ('echo !_WINVER!') do set "_WINVER=%%H"
 	)
 	setlocal DisableDelayedExpansion
 )
@@ -36,7 +36,7 @@ if not defined _LINUX (
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Set up ANSI escape character for multi-color output on Windows 10 or later
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+for /F %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
 set "cReset=%ESC%[0m"
 set "cTitle=%ESC%[96m"
 set "cMenu=%ESC%[93m"
@@ -260,7 +260,7 @@ echo %cError%[-] Invalid choice detected.%cReset% & goto end
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
 
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
 rem The value above is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
@@ -342,8 +342,7 @@ curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to bitsadmin if curl failed or isn't installed
 rem It requires Support Tools on Windows XP, however it doesn't seem to work
-rem https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html
-rem It also may not work on Windows Vista, Windows 7 and Windows 8
+rem It may also not work on Windows Vista, Windows 7 and Windows 8
 if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
 
 if exist "%2" (
@@ -494,7 +493,7 @@ rem Check where the game is installed from the registry
 echo:
 echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
 
-for /F "tokens=2*" %%A in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%B"
+for /F "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
 
 if "%_INSTALL_LOCATION%"=="" (
 	echo %cError%[-] %1 installation directory not found.%cReset%
@@ -523,13 +522,13 @@ if "%_INSTALL_LOCATION%"=="" (
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-rem for %%A in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxA"
+rem for %%G in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxG"
 
 echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
-mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul
+mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
 	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
@@ -568,7 +567,7 @@ if not defined _PWSH_CMD (
 )
 
 rem Check in the registry if it's already been whitelisted
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do goto openzone_edit
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do goto openzone_edit
 
 echo %cInfo%[i] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
 echo:
@@ -591,7 +590,7 @@ exit /B
 :openzone_edit
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
-for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%B"
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
@@ -629,12 +628,12 @@ goto end
 
 :powershell_check
 rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
-for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
+for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
 	set "_PWSH_CMD=powershell"
 ) else (
-	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
+	for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
 
 	if !ERRORLEVEL!==0 (
 		set "_PWSH_CMD=pwsh"

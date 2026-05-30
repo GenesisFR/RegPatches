@@ -20,18 +20,14 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 dpath > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 
+if defined _LINUX goto parse_args
+
 :windows_version
-rem Store the Windows version
-if not defined _LINUX (
-	setlocal EnableDelayedExpansion
-	rem Extract just the major and version
-	for /f "tokens=2,3* delims=[." %%G in ('ver') do (
-		set "_WINVER=%%G%%H"
-		rem We're left with just "Version Xx"
-		for /f "tokens=2 delims= " %%I in ('echo !_WINVER!') do set "_WINVER=%%I"
-	)
-	setlocal DisableDelayedExpansion
-)
+rem Extract just the major and minor Windows version
+for /f "tokens=2,3* delims=[." %%G in ('ver') do set "_WINVER=%%G%%H"
+
+rem We're left with just "Version Xx"
+for /f "tokens=2 delims= " %%I in ('echo %_WINVER%') do set "_WINVER=%%I"
 
 if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
 
@@ -48,7 +44,6 @@ set "cInfo=%ESC%[94m"
 set "cDim=%ESC%[90m"
 
 rem Disable multi-color output on unsupported systems
-if defined _LINUX call :disable_multi_color & goto parse_args
 if %_WINVER% LSS 100 call :disable_multi_color
 
 :parse_args

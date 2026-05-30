@@ -24,8 +24,8 @@ If you get this error after making a choice in the selection menu, uninstall Geo
 
 ## The scripts don't work on Windows XP
 
-They rely on some commands like `bitsadmin`, `choice` and `mklink`, which are not available by default on Windows XP. Making them work without them would require additional code that may be prone to errors and would only benefit a tiny fraction of users.
+They rely on some commands like `bitsadmin`, `choice` and `mklink`, which are not available by default on Windows XP.
 
 - `bitsadmin` can be obtained by installing the [Support Tools](https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html) for Windows XP, however I couldn't get the command to work (probably due to an outdated/unsupported protocol), so the script will offer to open this repository instead when trying to update.
 - `choice` is included in this repository as it's hard to find online. Download it and place it next to the script.
-- `mklink` doesn't exist, therefore directory junctions can't be created.
+- `mklink` doesn't exist, therefore [junction](https://learn.microsoft.com/en-us/sysinternals/downloads/junction) (a tool from Sysinternals) is used instead.

@@ -22,9 +22,9 @@ I left all of them available at the selection menu on Windows otherwise it would
 
 If you get this error after making a choice in the selection menu, uninstall Geomatica as it seems to interfere with batch files.
 
-## The scripts don't work on Windows 2000/XP
+## The scripts don't work on Windows 2000/XP/Server 2003
 
-They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on Windows 2000/XP.
+They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on these Windows versions.
 
 - `bitsadmin` can be obtained by installing the [Support Tools for Windows XP](https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html), however I couldn't get the command to work (probably due to an outdated/unsupported protocol), so the script will offer to open this repository instead when trying to update if both `bitsadmin` and `curl` failed or aren't installed.
 - `choice` is included in this repository as it's hard to find online. Download it and place it next to the script.

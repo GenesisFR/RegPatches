@@ -151,10 +151,7 @@ if exist DungeonSiege.exe (
 	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
 
 	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
-	if defined _LINUX (
-		echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
-		goto end
-	)
+	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset% & goto end
 )
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
@@ -516,10 +513,10 @@ echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 rem Windows Vista or later
-if %_WINVER% GTR 51 (
+if %_WINVER% GTR 52 (
 	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
-rem Windows 2000/XP
+rem Windows 2000/XP/Server 2003
 ) else (
 	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
@@ -623,7 +620,7 @@ ping -n 2 127.0.0.1 > nul
 goto end
 
 :powershell_check
-rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP)
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP/Server 2003)
 for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
 if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
 

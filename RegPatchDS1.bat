@@ -339,23 +339,21 @@ echo %cTitle%===================================================================
 exit /B
 
 :download [url] [file_path]
-rem curl was added on Windows 10 (1803)
+rem Requires https://curl.se/windows (already bundled on Windows 10 1803)
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
-rem Fall back to bitsadmin if curl failed or isn't installed
-rem It requires Support Tools on Windows XP, however it doesn't seem to work
-rem It may also not work on Windows Vista, Windows 7 and Windows 8
+rem Fall back to bitsadmin if curl failed or isn't installed (may not work on Windows Vista, 7 and 8)
 if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
 
-if exist "%2" (
-	echo %cSuccess%[+] Download complete.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	exit /B
-) else (
+if not exist "%2" (
 	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
-	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
+	echo %cInfo%[i] If you're not on Windows 10/11, make sure you have curl installed.%cReset%
 	exit /B 1
 )
+
+echo %cSuccess%[+] Download complete.%cReset%
+ping -n 2 127.0.0.1 > nul
+exit /B
 
 :ds1
 echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
@@ -638,22 +636,16 @@ ping -n 2 127.0.0.1 > nul
 goto end
 
 :powershell_check
-rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP)
 for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
+if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
 
-if %ERRORLEVEL%==0 (
-	set "_PWSH_CMD=powershell"
-) else (
-	for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
+for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
+if %ERRORLEVEL%==0 set "_PWSH_CMD=pwsh" & exit /B
 
-	if !ERRORLEVEL!==0 (
-		set "_PWSH_CMD=pwsh"
-	) else (
-		echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
-		echo Make sure it's installed and is in your PATH environment variable.
-		echo:
-	)
-)
+echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
+echo Make sure it's installed and is in your PATH environment variable.
+echo:
 
 exit /B
 
@@ -690,24 +682,24 @@ echo:
 echo %cTitle%Would you like to update? [Y,N]%cReset%
 choice /N
 
-if %ERRORLEVEL%==1 (
-	echo %cDim%--------------------------------------------------------------------------------%cReset%
-	echo %cInfo%[~] Downloading the new reg patch...%cReset%
-	call :download "%_URL%" "%_FILE%"
+if not %ERRORLEVEL%==1 goto end
 
-	rem All download methods failed, open the repo
-	setlocal EnableDelayedExpansion
-	if !ERRORLEVEL!==1 call :open_repo & goto end
-	setlocal DisableDelayedExpansion
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+echo %cInfo%[~] Downloading the new reg patch...%cReset%
+call :download "%_URL%" "%_FILE%"
 
-	echo %cSuccess%[+] Update complete.%cReset%
-	ping -n 2 127.0.0.1 > nul
+rem All download methods failed, open the repo
+setlocal EnableDelayedExpansion
+if !ERRORLEVEL!==1 call :open_repo & goto end
+setlocal DisableDelayedExpansion
 
-	rem Back up the old reg patch and replace it with the new one
-	copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
-	attrib -R "%~0"
-	move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
-)
+echo %cSuccess%[+] Update complete.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Back up the old reg patch and replace it with the new one
+copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
+attrib -R "%~0"
+move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
 
 goto end
 

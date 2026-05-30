@@ -23,13 +23,26 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 if defined _LINUX goto parse_args
 
 :windows_version
-rem Extract just the major and minor Windows version
-for /f "tokens=2,3* delims=[." %%G in ('ver') do set "_WINVER=%%G%%H"
+for /f "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
 
-rem We're left with just "Version Xx"
-for /f "tokens=2 delims= " %%I in ('echo %_WINVER%') do set "_WINVER=%%I"
+rem Keep just the major and minor Windows version (without the dot for numerical comparisons)
+rem major=%%G minor=%%H build=%%I
+for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H"
+
+rem 50 = Windows 2000
+rem 51 = Windows XP
+rem 52 = Windows Server 2003
+rem 60 = Windows Vista / Windows Server 2008
+rem 61 = Windows 7 / Windows Server 2008 R2
+rem 62 = Windows 8 / Windows Server 2012
+rem 63 = Windows Server 2012 R2
+rem 100 = Windows 10 / Windows Server 2016/2019/2022
+rem 1002xxxx = Windows 11
 
 if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
+
+rem Don't enable multi-color output on unsupported systems
+if %_WINVER% LSS 100 goto parse_args
 
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
@@ -42,9 +55,6 @@ set "cSuccess=%ESC%[92m"
 set "cError=%ESC%[91m"
 set "cInfo=%ESC%[94m"
 set "cDim=%ESC%[90m"
-
-rem Disable multi-color output on unsupported systems
-if %_WINVER% LSS 100 call :disable_multi_color
 
 :parse_args
 rem Check and validate arguments
@@ -299,16 +309,6 @@ if %ERRORLEVEL%==1 (
 
 ping -n 2 127.0.0.1 > nul
 goto end
-
-:disable_multi_color
-set "cReset="
-set "cTitle="
-set "cMenu="
-set "cSuccess="
-set "cError="
-set "cInfo="
-set "cDim="
-exit /B
 
 :display_header
 cls

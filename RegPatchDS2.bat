@@ -24,16 +24,16 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 rem Store the Windows version
 if not defined _LINUX (
 	setlocal EnableDelayedExpansion
-	rem Extract just the major version number
-	for /f "tokens=2* delims=[." %%G in ('ver') do (
-		set "_WINVER=%%G"
-		rem We're left with just "Version x"
-		for /f "tokens=2 delims= " %%H in ('echo !_WINVER!') do set "_WINVER=%%H"
+	rem Extract just the major and version
+	for /f "tokens=2,3* delims=[." %%G in ('ver') do (
+		set "_WINVER=%%G%%H"
+		rem We're left with just "Version Xx"
+		for /f "tokens=2 delims= " %%I in ('echo !_WINVER!') do set "_WINVER=%%I"
 	)
 	setlocal DisableDelayedExpansion
 )
 
-if %_WINVER% LSS 5 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
+if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
 
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
@@ -49,7 +49,7 @@ set "cDim=%ESC%[90m"
 
 rem Disable multi-color output on unsupported systems
 if defined _LINUX call :disable_multi_color & goto parse_args
-if %_WINVER% LSS 10 call :disable_multi_color
+if %_WINVER% LSS 100 call :disable_multi_color
 
 :parse_args
 rem Check and validate arguments
@@ -148,10 +148,7 @@ if exist DungeonSiege2.exe (
 	echo %cError%[-] DungeonSiege2.exe not found in the current directory.%cReset%
 
 	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
-	if defined _LINUX (
-		echo %cInfo%[i] Please place this script inside your Dungeon Siege 2 game directory.%cReset%
-		goto end
-	)
+	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege 2 game directory.%cReset% & goto end
 )
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
@@ -260,24 +257,11 @@ if exist "%_INSTALL_LOCATION%\%1" (
 exit /B
 
 :cfa_whitelist_all
-if %_WINVER% LSS 10 (
-	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
-	goto end
-)
-
+if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset% & goto end
 call :cfa_check
-
-if %_IS_CFA_ENABLED%==0 (
-	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
-	goto end
-)
-
+if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset% & goto end
 call :powershell_check
-
-if not defined _PWSH_CMD (
-	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-	goto end
-)
+if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
 
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
 echo %cDim%--------------------------------------------------------------------------------%cReset%
@@ -450,10 +434,10 @@ echo %cInfo%[~] Creating a directory junction for Dungeon Siege 2...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 rem Windows Vista or later
-if %_WINVER% GTR 5 (
+if %_WINVER% GTR 52 (
 	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
-rem Windows 2000/XP
+rem Windows 2000/XP/Server 2003
 ) else (
 	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
@@ -479,7 +463,7 @@ start "" https://github.com/GenesisFR/RegPatches
 exit /B
 
 :powershell_check
-rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP)
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP/Server 2003)
 for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
 if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
 
@@ -512,10 +496,7 @@ for /f %%G in ('type "%TEMP%\RegPatchDS2_version.txt"') do set _REPO_VERSION=%%G
 del "%_FILE%"
 
 rem Compare version numbers (without dots)
-if %_VERSION:.=% GEQ %_REPO_VERSION:.=% (
-	echo %cInfo%[i] You already have the latest version.%cReset%
-	goto end
-)
+if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the latest version.%cReset% & goto end
 
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS2.bat"
 set "_FILE=%TEMP%\RegPatchDS2.bat"
@@ -532,9 +513,7 @@ echo %cInfo%[~] Downloading the new reg patch...%cReset%
 call :download "%_URL%" "%_FILE%"
 
 rem All download methods failed, open the repo
-setlocal EnableDelayedExpansion
-if !ERRORLEVEL!==1 call :open_repo & goto end
-setlocal DisableDelayedExpansion
+if %ERRORLEVEL%==1 call :open_repo & goto end
 
 echo %cSuccess%[+] Update complete.%cReset%
 ping -n 2 127.0.0.1 > nul

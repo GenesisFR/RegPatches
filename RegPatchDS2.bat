@@ -449,8 +449,16 @@ rem for %%G in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxG"
 echo %cInfo%[~] Creating a directory junction for Dungeon Siege 2...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-if exist "%_PROGRAM_FILES%\Dungeon Siege 2" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 2" > nul
-mklink /J "%_PROGRAM_FILES%\Dungeon Siege 2" "%_INSTALL_LOCATION%" > nul 2>&1
+rem Windows Vista or later
+if %_WINVER% GTR 5 (
+	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
+rem Windows 2000/XP
+) else (
+	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
+	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+	junction "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
+)
 
 if %ERRORLEVEL%==0 (
 	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%

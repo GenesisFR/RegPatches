@@ -1,8 +1,9 @@
 @echo off
 setlocal
 
-title Reg Patcher for Dungeon Siege 2 by Genesis (v1.57)
-echo You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
+rem You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
+set "_VERSION=1.60"
+title Reg Patcher for Dungeon Siege 2 by Genesis (v%_VERSION%)
 echo:
 
 :linux_check
@@ -19,42 +20,67 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 dpath > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 
+:windows_version
+rem Store the Windows version
+if not defined _LINUX (
+	setlocal EnableDelayedExpansion
+	rem Extract just the major version number
+	for /f "tokens=2* delims=[." %%G in ('ver') do (
+		set "_WINVER=%%G"
+		rem We're left with just "Version x"
+		for /f "tokens=2 delims= " %%H in ('echo !_WINVER!') do set "_WINVER=%%H"
+	)
+	setlocal DisableDelayedExpansion
+)
+
+:multi_color
+rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
+rem Set up ANSI escape character for multi-color output on Windows 10 or later
+for /F %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
+set "cReset=%ESC%[0m"
+set "cTitle=%ESC%[96m"
+set "cMenu=%ESC%[93m"
+set "cSuccess=%ESC%[92m"
+set "cError=%ESC%[91m"
+set "cInfo=%ESC%[94m"
+set "cDim=%ESC%[90m"
+
+rem Disable multi-color output on unsupported systems
+if defined _LINUX call :disable_multi_color & goto parse_args
+if %_WINVER% LSS 10 call :disable_multi_color
+
 :parse_args
 rem Check and validate arguments
-if "%~1"=="" (
-	rem Do nothing
-	break 2> nul
-) else if /I "%~1"=="-c" (
-	rem It must be a digit between 1 and 7 to match the choices below
-	if "%~2"=="1" set "_CHOICE=%~2"
-	if "%~2"=="2" set "_CHOICE=%~2"
-	if "%~2"=="3" set "_CHOICE=%~2"
-	if "%~2"=="4" set "_CHOICE=%~2"
-	if "%~2"=="5" set "_CHOICE=%~2"
+if "%~1"=="" goto admin_check
+if /I not "%~1"=="-c" goto usage
 
-	if not defined _LINUX (
-		if "%~2"=="6" set "_CHOICE=%~2"
-		if "%~2"=="7" set "_CHOICE=%~2"
-	)
+set "_CHOICE=%~2"
+rem Convert empty arguments or strings to 0
+set /A "_CHOICE+=0"
 
-	if not defined _CHOICE goto usage
-) else goto usage
+rem It must be a digit between 1 and 10 (6 on Linux) to match the choices below
+if %_CHOICE% LSS 1 goto usage
+if %_CHOICE% GTR 8 goto usage
+if defined _LINUX if %_CHOICE% GTR 5 goto usage
 
+:admin_check
 rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
 if defined _LINUX goto init
 
-:admin_check
+call :display_header
+
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
-echo Checking if the script is run as admin...
+echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
 
 if %ERRORLEVEL%==0 (
-	echo OK
-) else (
-	echo ERROR: admin rights not detected.
+	echo %cSuccess%[+] Administrator rights detected.%cReset%
 	echo:
-	echo The script will now restart as admin.
+	ping -n 2 127.0.0.1 > nul
+) else (
+	echo %cError%[-] ERROR: administrator rights required.%cReset%
+	echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
@@ -64,8 +90,6 @@ if %ERRORLEVEL%==0 (
 
 	exit /B
 )
-
-echo:
 
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
@@ -86,6 +110,8 @@ set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
 
 rem https://ss64.com/nt/syntax-64bit.html
+rem Check if we're on a 32-bit system
+set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
@@ -105,190 +131,265 @@ if %_OS_BITNESS%==32 (
 	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902"
 )
 
-rem Store the Windows version
-if not defined _LINUX (
-	for /f "tokens=4 delims=. " %%i in ('ver') do set _WINVER=%%i
-)
-
 :exe_check
-rem Check for the game executable in the current directory
-echo Current directory: %CD%
-echo:
-echo Checking for the game executable...
+echo %cInfo%[~] Current directory:%cReset% %CD%
+echo %cInfo%[~] Scanning for game executables...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
 
+rem Check for game executables in the current directory
 if exist DungeonSiege2.exe (
 	set "_INSTALL_LOCATION=%CD%"
-	echo OK
+	echo %cSuccess%[+] Found DungeonSiege2.exe in the current directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
 	goto menu
 ) else (
-	echo DungeonSiege2.exe not found in the current directory!
+	echo %cError%[-] DungeonSiege2.exe not found in the current directory.%cReset%
+
 	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
-	if defined _LINUX goto end
+	if defined _LINUX (
+		echo %cInfo%[i] Please place this script inside your Dungeon Siege 2 game directory.%cReset%
+		goto end
+	)
 )
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
 call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
-if %ERRORLEVEL%==100 call :install_detection GOG "%_REG_KEY_GOG%" path
-if %ERRORLEVEL%==100 goto end
-rem We've been through the menu, exit
-if %ERRORLEVEL% LEQ 10 goto :eof
+
+if %ERRORLEVEL%==1 (
+	call :install_detection GOG "%_REG_KEY_GOG%" path
+
+	if %ERRORLEVEL%==1 (
+		echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
+		echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
+		goto end
+	)
+)
 
 :menu
 rem Selection menu
+call :display_header
+echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
 echo:
-echo Please make a selection:
+echo %cTitle%[ REGISTRY PATCHING ]%cReset%
+echo %cMenu%[1]%cReset% Add registry entries for Dungeon Siege 2 and Broken World
+echo %cMenu%[2]%cReset% Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
+echo %cMenu%[3]%cReset% Add registry entries for Broken World (needed for Elys DS2BW and OpenSpy)
+echo %cMenu%[4]%cReset% Remove all registry entries for both games
+echo %cMenu%[5]%cReset% Export registry entries to a REG file (to import them manually)
 echo:
-echo 1. Add registry entries for Dungeon Siege 2 and Dungeon Siege 2: Broken World
-echo 2. Add registry entries for Dungeon Siege 2 (needed for BW, Elys DS2 and the DS2 Tool Kit)
-echo 3. Add registry entries for Dungeon Siege 2: Broken World (needed for Elys DS2BW and OpenSpy)
-echo 4. Remove registry entries for both games
-echo 5. Export registry entries to a REG file (to import them manually)
 
 rem Hide Windows-specific options on Linux
 if not defined _LINUX (
-	echo 6. Create a directory junction in Program Files ^(useful for GameRanger^)
-	echo 7. Add the game executable^(s^) to the list of allowed applications in Controlled Folder Access ^(useful on Windows 10/11^)
-	echo 8. Exit
+	echo %cTitle%[ MULTIPLAYER ^& FIXES ]%cReset%
+	echo %cMenu%[6]%cReset% Create a directory junction in Program Files ^(useful for GameRanger^)
+	echo %cMenu%[7]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
+	echo:
+	echo %cTitle%[ OTHER ]%cReset%
+	echo %cMenu%[8]%cReset% Check for updates
+	echo:
+	echo %cError%[9] Exit%cReset%
 ) else (
-	echo 6. Exit
+	echo %cError%[6] Exit%cReset%
 )
 
 echo:
-echo Note: if you're not sure which option to select, just press 1.
-echo:
+echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press 1.
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+
+rem Double the trailing backslash from the installation directory as it's interpreted as an escape character by the REG commands, which causes them
+rem to not work correctly when the game is installed at the root of a drive
+set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
+if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
 
 rem Automatically make a selection if arguments were passed
+if defined _CHOICE goto process_choice
+
 if not defined _LINUX (
-	if defined _CHOICE (
-		choice /C:1234567 /N /T 0 /D %_CHOICE%
-	) else (
-		choice /C:12345678 /N
-	)
+	echo %cTitle%Please make a selection [1-9]:%cReset%
+	choice /C:123456789 /N
 ) else (
-	if defined _CHOICE (
-		choice /C:12345 /N /T 0 /D %_CHOICE%
-	) else (
-		choice /C:123456 /N
-	)
+	echo %cTitle%Please make a selection [1-6]:%cReset%
+	choice /C:123456 /N
 )
 
+set "_CHOICE=%ERRORLEVEL%"
+
+:process_choice
+call :display_header
 echo:
 
-if %ERRORLEVEL%==1 call :ds2 & echo: & call :ds2bw & goto end
-if %ERRORLEVEL%==2 call :ds2 & goto end
-if %ERRORLEVEL%==3 call :ds2bw & goto end
-if %ERRORLEVEL%==4 goto cleanup
-if %ERRORLEVEL%==5 goto export
+rem That's the result of a Ctrl+C
+if %_CHOICE%==0 goto menu
+
+if %_CHOICE%==1 call :ds2 & echo: & call :ds2bw & goto end
+if %_CHOICE%==2 call :ds2 & goto end
+if %_CHOICE%==3 call :ds2bw & goto end
+if %_CHOICE%==4 goto cleanup
+if %_CHOICE%==5 goto export
 
 rem Don't handle Windows-specific options on Linux
-if not defined _LINUX (
-	if %ERRORLEVEL%==6 goto junction
-	if %ERRORLEVEL%==7 goto controlled
-	if %ERRORLEVEL%==8 exit /B
-) else (
-	if %ERRORLEVEL%==6 exit /B
-)
+if defined _LINUX exit /B
+
+if %_CHOICE%==6 goto junction
+if %_CHOICE%==7 goto cfa_whitelist_all
+if %_CHOICE%==8 goto update
+if %_CHOICE%==9 exit /B
 
 rem This is only here to help with development since we should never reach this in practice
-echo No valid choice detected! & goto end
-
-:install_detection
-rem Check where the game is installed from the registry
-echo:
-echo Searching for the %1 installation directory...
-
-for /F "tokens=2*" %%A in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%B"
-
-if "%_INSTALL_LOCATION%"=="" (
-	echo No %1 installation directory found!
-	exit /B 100
-) else (
-	echo %1 installation directory found: %_INSTALL_LOCATION%
-
-	rem Check for the game executable in the installation directory
-	echo Checking for the game executable...
-
-	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-		echo OK
-		goto menu
-	) else (
-		echo DungeonSiege2.exe not found in the %1 installation directory!
-		exit /B 100
-	)
-)
+echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
 :cfa_check
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
 
-if %_WINVER% GEQ 10 (
-	for /f "tokens=2*" %%A in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%B"
-)
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
 rem The value above is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
 
 exit /B
 
-:powershell_check
-rem Check if Powershell is installed (we could use the where command but it's not included by default on XP)
-for %%A in (powershell.exe) do @echo %%~$PATH:A% | find "powershell" > nul 2>&1
-
-if %ERRORLEVEL%==0 (
-	set "_PWSH_CMD=powershell"
-) else (
-	for %%A in (pwsh.exe) do @echo %%~$PATH:A | find "pwsh" > nul 2>&1
-
-	if %ERRORLEVEL%==0 (
-		set "_PWSH_CMD=pwsh"
-	) else (
-		echo Powershell not found, some options may fail.
-		echo Make sure it's installed and is in your PATH environment variable.
-		echo:
-	)
+:cfa_whitelist [exe]
+if exist "%_INSTALL_LOCATION%\%1" (
+	echo %cInfo%[~] Whitelisting %1... %cReset%
+	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
 )
 
 exit /B
 
-:ds2
-echo Adding registry entries for Dungeon Siege 2...
+:cfa_whitelist_all
+if %_WINVER% LSS 10 (
+	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
+	goto end
+)
 
-(
-	reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
-	reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
-	reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG%
-) > nul
+call :cfa_check
 
-echo DONE
-exit /B
+if %_IS_CFA_ENABLED%==0 (
+	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
+	goto end
+)
 
-:ds2bw
-echo Adding registry entries for Dungeon Siege 2: Broken World...
+call :powershell_check
 
-(
-	reg add "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
-	reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
-	reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG%
-	reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION%" /f %_REG_ARG%
-) > nul
+if not defined _PWSH_CMD (
+	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
+	goto end
+)
 
-echo DONE
-exit /B
+echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
+
+setlocal EnableDelayedExpansion
+call :cfa_whitelist DS2VideoConfig.exe
+call :cfa_whitelist DungeonSiege2.exe
+call :cfa_whitelist DungeonSiege2Mod.exe
+setlocal DisableDelayedExpansion
+
+echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+goto end
 
 :cleanup
-echo Removing registry entries for Dungeon Siege 2 and Broken World...
+echo %cInfo%[~] Removing registry entries for Dungeon Siege 2 and Broken World...%cReset%
+ping -n 2 127.0.0.1 > nul
 reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
 reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
-echo DONE
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to remove registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
 goto end
+
+:disable_multi_color
+set "cReset="
+set "cTitle="
+set "cMenu="
+set "cSuccess="
+set "cError="
+set "cInfo="
+set "cDim="
+exit /B
+
+:display_header
+cls
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 2 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
+exit /B
+
+:download [url] [file_path]
+rem curl was added on Windows 10 (1803)
+curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
+
+rem Fall back to bitsadmin if curl failed or isn't installed
+rem It requires Support Tools on Windows XP, however it doesn't seem to work
+rem It may also not work on Windows Vista, Windows 7 and Windows 8
+if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
+
+if exist "%2" (
+	echo %cSuccess%[+] Download complete.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else (
+	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
+	echo %cInfo%[i] If you're on Windows XP, make sure you have Support Tools installed.%cReset%
+	exit /B 1
+)
+
+:ds2
+echo %cInfo%[~] Adding registry entries for Dungeon Siege 2...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+(
+	reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
+	reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
+	reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG%
+) > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
+
+:ds2bw
+echo %cInfo%[~] Adding registry entries for Broken World...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+(
+	reg add "%_2K_BW%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
+	reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
+	reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG%
+	reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
+) > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
 
 :export
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
 set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
 
-echo Exporting registry entries for Dungeon Siege 2 and Broken World...
+echo %cInfo%[~] Exporting registry entries for Dungeon Siege 2 and Broken World...%cReset%
+ping -n 2 127.0.0.1 > nul
 
 (
 	echo REGEDIT4
@@ -307,80 +408,158 @@ echo Exporting registry entries for Dungeon Siege 2 and Broken World...
 	echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 ) > %_REG_FILE%
 
-echo DONE
-echo:
-echo A new file called "%_REG_FILE%" has been created in the current directory.
+echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
+echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
+ping -n 2 127.0.0.1 > nul
 
 goto end
+
+:install_detection [platform] [reg_key] [reg_value]
+rem Check where the game is installed from the registry
+echo:
+echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
+
+for /F "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
+
+if "%_INSTALL_LOCATION%"=="" (
+	echo %cError%[-] %1 installation directory not found.%cReset%
+	exit /B 1
+) else (
+	echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
+	ping -n 2 127.0.0.1 > nul
+	echo %cInfo%[~] Scanning for game executables...%cReset%
+	echo %cDim%--------------------------------------------------------------------------------%cReset%
+
+	rem Check for game executables in the installation directory
+	if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
+		echo %cSuccess%[+] Found DungeonSiege2.exe in the %1 installation directory.%cReset%
+		ping -n 2 127.0.0.1 > nul
+		exit /B
+	) else (
+		echo %cError%[-] DungeonSiege2.exe not found in the %1 installation directory.%cReset%
+		exit /B 1
+	)
+)
 
 :junction
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
-for %%a in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxa"
+rem for %%G in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxG"
 
-if exist "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" rmdir /Q "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" > nul
-mklink /J "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" "%_INSTALL_LOCATION%"
+echo %cInfo%[~] Creating a directory junction for Dungeon Siege 2...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+if exist "%_PROGRAM_FILES%\Dungeon Siege 2" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 2" > nul
+mklink /J "%_PROGRAM_FILES%\Dungeon Siege 2" "%_INSTALL_LOCATION%" > nul 2>&1
 
 if %ERRORLEVEL%==0 (
-	echo:
-	echo You can now select the game's executable from "%_PROGRAM_FILES%\%_INSTALL_DIRECTORY_NAME%" to add the game to GameRanger.
-	echo:
-	echo Warning: do NOT move the directory junction somewhere else as it will also move your entire game directory!
-	echo It can safely be renamed or deleted.
+	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 2" to add the game to GameRanger.%cReset%
+	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
+	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
+) else (
+	echo %cError%[-] Failed to create directory junction.%cReset%
 )
 
+ping -n 2 127.0.0.1 > nul
 goto end
 
-:controlled
-setlocal EnableDelayedExpansion
+:open_repo
+echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
+pause
+start "" https://github.com/GenesisFR/RegPatches
+exit /B
 
-if not defined _LINUX (
-	call :cfa_check
-	call :powershell_check
+:powershell_check
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on XP)
+for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
 
-	if !_WINVER! GEQ 10 (
-		if !_IS_CFA_ENABLED!==1 (
-			if defined _PWSH_CMD (
-				echo Adding the game executable^(s^) to the list of allowed applications in Controlled Folder Access...
+if %ERRORLEVEL%==0 (
+	set "_PWSH_CMD=powershell"
+) else (
+	for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
 
-				if exist "%_INSTALL_LOCATION%\DS2VideoConfig.exe" (
-					echo Adding DS2VideoConfig.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DS2VideoConfig.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
-					echo Adding DungeonSiege2.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2.exe' > nul 2>&1
-				)
-
-				if exist "%_INSTALL_LOCATION%\DungeonSiege2Mod.exe" (
-					echo Adding DungeonSiege2Mod.exe...
-					!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\DungeonSiege2Mod.exe' > nul 2>&1
-				)
-			) else (
-				echo Powershell not installed, nothing to do.
-			)
-		) else (
-			echo Controlled Folder Access is disabled, nothing to do.
-		)
+	if !ERRORLEVEL!==0 (
+		set "_PWSH_CMD=pwsh"
 	) else (
-		echo You're not on Windows 10 or newer, nothing to do.
+		echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
+		echo Make sure it's installed and is in your PATH environment variable.
+		echo:
 	)
 )
 
-setlocal DisableDelayedExpansion
-echo DONE
+exit /B
+
+:update
+rem Download repo version file
+echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
+
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS2_version.txt"
+set "_FILE=%TEMP%\RegPatchDS2_version.txt"
+call :download "%_URL%" "%_FILE%"
+
+rem All download methods failed, open the repo
+if %ERRORLEVEL%==1 call :open_repo & goto end
+
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+echo %cInfo%[~] Comparing the local version against the version on GitHub...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Store the file content into a variable
+for /f %%G in ('type "%TEMP%\RegPatchDS2_version.txt"') do set _REPO_VERSION=%%G
+del "%_FILE%"
+
+rem Compare version numbers (without dots)
+if %_VERSION:.=% GEQ %_REPO_VERSION:.=% (
+	echo %cInfo%[i] You already have the latest version.%cReset%
+	goto end
+)
+
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS2.bat"
+set "_FILE=%TEMP%\RegPatchDS2.bat"
+
+echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available! %cReset%
+echo:
+echo %cTitle%Would you like to update? [Y,N]%cReset%
+choice /N
+
+if %ERRORLEVEL%==1 (
+	echo %cDim%--------------------------------------------------------------------------------%cReset%
+	echo %cInfo%[~] Downloading the new reg patch...%cReset%
+	call :download "%_URL%" "%_FILE%"
+
+	rem All download methods failed, open the repo
+	setlocal EnableDelayedExpansion
+	if !ERRORLEVEL!==1 call :open_repo & goto end
+	setlocal DisableDelayedExpansion
+
+	echo %cSuccess%[+] Update complete.%cReset%
+	ping -n 2 127.0.0.1 > nul
+
+	rem Back up the old reg patch and replace it with the new one
+	copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
+	attrib -R "%~0"
+	move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
+)
+
 goto end
 
 :usage
-echo Usage:
+call :display_header
+
+set "_LAST_OPTION_ID=8"
+if defined _LINUX set "_LAST_OPTION_ID=5"
+
+echo %cInfo%Usage:%cReset%
 echo:
-if not defined _LINUX (
-	echo %~0 -c X ^(where X is a number between 1 and 7^)
-) else (
-	echo %~0 -c X ^(where X is a number between 1 and 5^)
-)
+echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)%cReset%
+goto end
 
 :end
 echo:
+echo %cTitle%================================================================================%cReset%
+echo %cInfo%[~] Exiting...%cReset%
+echo %cTitle%================================================================================%cReset%
+echo:
 pause
+endlocal

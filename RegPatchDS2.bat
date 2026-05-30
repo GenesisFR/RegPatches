@@ -170,6 +170,9 @@ if %ERRORLEVEL%==1 (
 )
 
 :menu
+rem Automatically make a selection if arguments were passed
+if defined _CHOICE goto process_choice
+
 rem Selection menu
 call :display_header
 echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
@@ -204,9 +207,6 @@ rem Double the trailing backslash from the installation directory as it's interp
 rem to not work correctly when the game is installed at the root of a drive
 set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
 if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
-
-rem Automatically make a selection if arguments were passed
-if defined _CHOICE goto process_choice
 
 if not defined _LINUX (
 	echo %cTitle%Please make a selection [1-9]:%cReset%
@@ -286,9 +286,12 @@ goto end
 :cleanup
 echo %cInfo%[~] Removing registry entries for Dungeon Siege 2 and Broken World...%cReset%
 ping -n 2 127.0.0.1 > nul
-reg delete "%_MS_DS2%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_2K_BW%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_GPG_BW%" /f %_REG_ARG% > nul 2>&1
+
+(
+	reg delete "%_MS_DS2%" /f %_REG_ARG%
+	reg delete "%_2K_BW%" /f %_REG_ARG%
+	reg delete "%_GPG_BW%" /f %_REG_ARG%
+) > nul 2>&1
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to remove registry entries.%cReset%
@@ -331,7 +334,7 @@ ping -n 2 127.0.0.1 > nul
 	reg add "%_MS_DS2%" /v "AppPath" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
 	reg add "%_MS_DS2%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
 	reg add "%_MS_DS2%" /v "PID" /t REG_SZ /d "00000-000-0000000-00000" /f %_REG_ARG%
-) > nul
+) > nul 2>&1
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
@@ -351,7 +354,7 @@ ping -n 2 127.0.0.1 > nul
 	reg add "%_2K_BW%" /v "InstallationDirectory" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
 	reg add "%_2K_BW%" /v "PID" /t REG_SZ /d "0000-0000-0000-0000" /f %_REG_ARG%
 	reg add "%_GPG_BW%\1.00.0000" /v "InstallLocation" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG%
-) > nul
+) > nul 2>&1
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%

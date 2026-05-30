@@ -24,9 +24,13 @@ If you get this error after making a choice in the selection menu, uninstall Geo
 
 ## The scripts don't work on Windows 2000/XP/Server 2003
 
-They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on these Windows versions.
+They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on these versions of Windows:
 
 - `bitsadmin` can be obtained by installing the [Support Tools for Windows XP](https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html), however I couldn't get the command to work (probably due to an outdated/unsupported protocol), so the script will offer to open this repository instead when trying to update if both `bitsadmin` and `curl` failed or aren't installed.
-- `choice` is included in this repository as it's hard to find online. Download it from the [XP](https://github.com/GenesisFR/RegPatches/tree/master/XP) folder and place it next to the script. If you don't trust running unknown programs on your system, you can also run the reg patch with the `-c #` (where `#` is a number) command-line argument, which will bypass the selection menu and execute the corresponding option.
-- `curl` v7.80 can be obtained from the [Wayback Machine](https://web.archive.org/web/20211208160135/https://curl.se/windows). Download it and place both `curl.exe` and `curl-ca-bundle.crt` next to the script.
+- `choice` can be obtained from [here](https://www.allbootdisks.com/disk_contents/dos.html) (under `MS-DOS 6.21`). If you don't trust downloading programs from unofficial sources, you can also run the reg patch with the `-c #` (where `#` is a number) command-line argument, which will bypass the selection menu and execute the corresponding option.
+- `curl` v7.80 can be obtained from the [Wayback Machine](https://web.archive.org/web/20211208160135/https://curl.se/windows).
 - `mklink` doesn't exist, therefore [junction](https://learn.microsoft.com/en-us/sysinternals/downloads/junction) (a tool from Sysinternals) is used instead.
+
+Download them and place them next to the script (for `curl`, `curl-ca-bundle.crt` must be present as well).
+
+They're also available from the [XP](https://github.com/GenesisFR/RegPatches/tree/master/XP) folder, for your convenience.

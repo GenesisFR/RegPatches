@@ -33,6 +33,8 @@ if not defined _LINUX (
 	setlocal DisableDelayedExpansion
 )
 
+if %_WINVER% LSS 5 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
+
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Set up ANSI escape character for multi-color output on Windows 10 or later
@@ -532,7 +534,7 @@ rem Windows Vista or later
 if %_WINVER% GTR 5 (
 	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
-rem Windows XP
+rem Windows 2000/XP
 ) else (
 	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul

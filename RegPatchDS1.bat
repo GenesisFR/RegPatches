@@ -173,6 +173,9 @@ if %ERRORLEVEL%==1 (
 )
 
 :menu
+rem Automatically make a selection if arguments were passed
+if defined _CHOICE goto process_choice
+
 rem Selection menu
 call :display_header
 echo %cInfo%Installation directory:%cReset% %_INSTALL_LOCATION%
@@ -212,9 +215,6 @@ rem Double the trailing backslash from the installation directory as it's interp
 rem to not work correctly when the game is installed at the root of a drive
 set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
 if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
-
-rem Automatically make a selection if arguments were passed
-if defined _CHOICE goto process_choice
 
 if not defined _LINUX (
 	echo %cTitle%Please make a selection [1-a]:%cReset%
@@ -298,8 +298,11 @@ goto end
 :cleanup
 echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
-reg delete "%_MS_DS%" /f %_REG_ARG% > nul 2>&1
-reg delete "%_MS_LOA%" /f %_REG_ARG% > nul 2>&1
+
+(
+	reg delete "%_MS_DS%" /f %_REG_ARG%
+	reg delete "%_MS_LOA%" /f %_REG_ARG%
+) > nul 2>&1
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to remove registry entries.%cReset%
@@ -318,7 +321,7 @@ echo %cTitle%===================================================================
 exit /B
 
 :download [url] [file_path]
-rem Requires https://curl.se/windows (already bundled on Windows 10 1803)
+rem Requires https://curl.se/windows (already bundled starting from Windows 10 1803)
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to bitsadmin if curl failed or isn't installed (may not work on Windows Vista, 7 and 8)
@@ -337,6 +340,7 @@ exit /B
 :ds1
 echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
+
 reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
@@ -351,6 +355,7 @@ exit /B
 :ds1loa
 echo %cInfo%[~] Adding registry entries for Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
+
 reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (

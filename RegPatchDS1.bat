@@ -24,16 +24,16 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 rem Store the Windows version
 if not defined _LINUX (
 	setlocal EnableDelayedExpansion
-	rem Extract just the major version number
-	for /f "tokens=2* delims=[." %%G in ('ver') do (
-		set "_WINVER=%%G"
-		rem We're left with just "Version x"
-		for /f "tokens=2 delims= " %%H in ('echo !_WINVER!') do set "_WINVER=%%H"
+	rem Extract just the major and version
+	for /f "tokens=2,3* delims=[." %%G in ('ver') do (
+		set "_WINVER=%%G%%H"
+		rem We're left with just "Version Xx"
+		for /f "tokens=2 delims= " %%I in ('echo !_WINVER!') do set "_WINVER=%%I"
 	)
 	setlocal DisableDelayedExpansion
 )
 
-if %_WINVER% LSS 5 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
+if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
 
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
@@ -49,7 +49,7 @@ set "cDim=%ESC%[90m"
 
 rem Disable multi-color output on unsupported systems
 if defined _LINUX call :disable_multi_color & goto parse_args
-if %_WINVER% LSS 10 call :disable_multi_color
+if %_WINVER% LSS 100 call :disable_multi_color
 
 :parse_args
 rem Check and validate arguments
@@ -270,24 +270,11 @@ if exist "%_INSTALL_LOCATION%\%1" (
 exit /B
 
 :cfa_whitelist_all
-if %_WINVER% LSS 10 (
-	echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset%
-	goto end
-)
-
+if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset% & goto end
 call :cfa_check
-
-if %_IS_CFA_ENABLED%==0 (
-	echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset%
-	goto end
-)
-
+if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset% & goto end
 call :powershell_check
-
-if not defined _PWSH_CMD (
-	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-	goto end
-)
+if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
 
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
 echo %cDim%--------------------------------------------------------------------------------%cReset%
@@ -370,7 +357,7 @@ ping -n 2 127.0.0.1 > nul
 exit /B
 
 :ds1loa
-echo %cInfo%[~] Adding registry entries for Dungeon Siege: Legends of Aranna...%cReset%
+echo %cInfo%[~] Adding registry entries for Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
 reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
 
@@ -529,7 +516,7 @@ echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 
 rem Windows Vista or later
-if %_WINVER% GTR 5 (
+if %_WINVER% GTR 51 (
 	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
 rem Windows 2000/XP
@@ -564,7 +551,7 @@ ping -n 2 127.0.0.1 > nul
 
 rem Whitelist cmd.exe in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
 if defined _LINUX goto openzone_edit
-if %_WINVER% LSS 10 goto openzone_edit
+if %_WINVER% LSS 100 goto openzone_edit
 call :cfa_check
 if %_IS_CFA_ENABLED%==0 goto openzone_edit
 call :powershell_check
@@ -669,10 +656,7 @@ for /f %%G in ('type "%TEMP%\RegPatchDS1_version.txt"') do set _REPO_VERSION=%%G
 del "%_FILE%"
 
 rem Compare version numbers (without dots)
-if %_VERSION:.=% GEQ %_REPO_VERSION:.=% (
-	echo %cInfo%[i] You already have the latest version.%cReset%
-	goto end
-)
+if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the latest version.%cReset% & goto end
 
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
 set "_FILE=%TEMP%\RegPatchDS1.bat"
@@ -689,9 +673,7 @@ echo %cInfo%[~] Downloading the new reg patch...%cReset%
 call :download "%_URL%" "%_FILE%"
 
 rem All download methods failed, open the repo
-setlocal EnableDelayedExpansion
-if !ERRORLEVEL!==1 call :open_repo & goto end
-setlocal DisableDelayedExpansion
+if %ERRORLEVEL%==1 call :open_repo & goto end
 
 echo %cSuccess%[+] Update complete.%cReset%
 ping -n 2 127.0.0.1 > nul

@@ -321,10 +321,13 @@ echo %cTitle%===================================================================
 exit /B
 
 :download [url] [file_path]
-rem Requires https://curl.se/windows (already bundled starting from Windows 10 1803)
+rem Requires https://curl.se/windows (installed by default starting from Windows 10)
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
-rem Fall back to bitsadmin if curl failed or isn't installed (may not work on Windows Vista, 7 and 8)
+rem Fall back to powershell (installed by default starting from Windows 7)
+if not exist "%2" if defined _PWSH_CMD %_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
+
+rem Fall back to bitsadmin (may not work on Vista, won't work on older systems)
 if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
 
 if not exist "%2" (

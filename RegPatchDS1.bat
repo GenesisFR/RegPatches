@@ -61,9 +61,8 @@ rem Check and validate arguments
 if "%~1"=="" goto admin_check
 if /I not "%~1"=="-c" goto usage
 
-set "_CHOICE=%~2"
 rem Convert empty arguments or strings to 0
-set /A "_CHOICE+=0"
+set /A "_CHOICE=%~2 + 0"
 
 rem It must be a digit between 1 and 10 (6 on Linux) to match the choices below
 if %_CHOICE% LSS 1 goto usage
@@ -80,14 +79,12 @@ rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 echo %cInfo%[~] Checking if the script is run as admin...%cReset%
 fsutil dirty query %SystemDrive% > nul
+ping -n 2 127.0.0.1 > nul
 
-if %ERRORLEVEL%==0 (
-	echo %cSuccess%[+] Administrator rights detected.%cReset%
-	echo:
-	ping -n 2 127.0.0.1 > nul
-) else (
+if not %ERRORLEVEL%==0 (
 	echo %cError%[-] ERROR: administrator rights required.%cReset%
 	echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
+	ping -n 2 127.0.0.1 > nul
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
@@ -97,6 +94,10 @@ if %ERRORLEVEL%==0 (
 
 	exit /B
 )
+
+echo %cSuccess%[+] Administrator rights detected.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
 
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
@@ -118,28 +119,25 @@ set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Ste
 rem https://ss64.com/nt/syntax-64bit.html
 rem Check if we're on a 32-bit system
 set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
-set "_OS_BITNESS=64"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
 if %PROCESSOR_ARCHITECTURE%==x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
-		set "_OS_BITNESS=32"
 		set "_PROGRAM_FILES=%ProgramFiles%"
-	)
-)
 
-rem WOW6432Node and /reg:32 aren't present on 32-bit systems
-if %_OS_BITNESS%==32 (
-	set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
-	set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
-	set "_REG_ARG="
-	set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
+		rem WOW6432Node and /reg:32 aren't present on 32-bit systems
+		set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\DungeonSiege\1.0"
+		set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
+		set "_REG_ARG="
+		set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
+	)
 )
 
 :exe_check
 echo %cInfo%[~] Current directory:%cReset% %CD%
 echo %cInfo%[~] Scanning for game executables...%cReset%
 echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
 
 rem Check for game executables in the current directory
 if exist DungeonSiege.exe (
@@ -154,6 +152,7 @@ if exist DungeonSiege.exe (
 	goto menu
 ) else (
 	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
 
 	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
 	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset% & goto end
@@ -161,15 +160,12 @@ if exist DungeonSiege.exe (
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
 call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
+if %ERRORLEVEL%==1 call :install_detection GOG "%_REG_KEY_GOG%" path
 
 if %ERRORLEVEL%==1 (
-	call :install_detection GOG "%_REG_KEY_GOG%" path
-
-	if %ERRORLEVEL%==1 (
-		echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
-		echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
-		goto end
-	)
+	echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
+	echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
+	goto end
 )
 
 :menu
@@ -258,7 +254,7 @@ set "_IS_CFA_ENABLED=0"
 
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
-rem The value above is hexadecimal so we need to convert it to decimal
+rem The value in the registry is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
 
 exit /B
@@ -266,15 +262,17 @@ exit /B
 :cfa_whitelist [exe]
 if exist "%_INSTALL_LOCATION%\%1" (
 	echo %cInfo%[~] Whitelisting %1... %cReset%
-	!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
+	%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
 )
 
 exit /B
 
 :cfa_whitelist_all
 if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset% & goto end
+
 call :cfa_check
 if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset% & goto end
+
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
 
@@ -282,17 +280,13 @@ echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Acces
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 ping -n 2 127.0.0.1 > nul
 
-setlocal EnableDelayedExpansion
 call :cfa_whitelist DSLOA.exe
 call :cfa_whitelist DSLOAMod.exe
 call :cfa_whitelist DSMod.exe
 call :cfa_whitelist DSVideoConfig.exe
 call :cfa_whitelist DungeonSiege.exe
-setlocal DisableDelayedExpansion
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
-ping -n 2 127.0.0.1 > nul
-
 goto end
 
 :cleanup
@@ -310,7 +304,6 @@ if %ERRORLEVEL%==1 (
 	echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 goto end
 
 :display_header
@@ -337,7 +330,6 @@ if not exist "%2" (
 )
 
 echo %cSuccess%[+] Download complete.%cReset%
-ping -n 2 127.0.0.1 > nul
 exit /B
 
 :ds1
@@ -377,7 +369,7 @@ set "_CFG_FILE=%~1"
 set "_CFG_FILE_TEMP=%~1.tmp"
 set "_TARGET_SECTION=multiplayer"
 
-if exist "%_CFG_FILE_TEMP%" del "%_CFG_FILE_TEMP%"
+del /F "%_CFG_FILE_TEMP%" > nul 2>&1
 set "_IN_SECTION=0"
 
 rem Read the config file line by line
@@ -460,7 +452,6 @@ if exist %_REG_FILE% (
 	echo %cError%[-] ERROR: failed to export registry entries.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 goto end
 
 :gmax
@@ -477,7 +468,6 @@ if exist gmax.exe (
 	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 goto end
 
 :install_detection [platform] [reg_key] [reg_value]
@@ -487,28 +477,26 @@ echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
 
 for /F "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
 
-if "%_INSTALL_LOCATION%"=="" (
-	echo %cError%[-] %1 installation directory not found.%cReset%
-	exit /B 1
-) else (
-	echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
-	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[~] Scanning for game executables...%cReset%
-	echo %cDim%--------------------------------------------------------------------------------%cReset%
+if "%_INSTALL_LOCATION%"=="" echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
 
-	rem Check for game executables in the installation directory
-	if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-		echo %cSuccess%[+] Found DungeonSiege.exe in the %1 installation directory.%cReset%
-		ping -n 2 127.0.0.1 > nul
-		exit /B
-	) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-		echo %cSuccess%[+] Found DSLOA.exe in the %1 installation directory.%cReset%
-		ping -n 2 127.0.0.1 > nul
-		exit /B
-	) else (
-		echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
-		exit /B 1
-	)
+echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
+echo %cInfo%[~] Scanning for game executables...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Check for game executables in the installation directory
+if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+	echo %cSuccess%[+] Found DungeonSiege.exe in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+	echo %cSuccess%[+] Found DSLOA.exe in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else (
+	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B 1
 )
 
 :junction
@@ -539,7 +527,6 @@ if %ERRORLEVEL%==0 (
 	echo %cError%[-] Failed to create directory junction.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 goto end
 
 :open_repo
@@ -549,22 +536,21 @@ start "" https://github.com/GenesisFR/RegPatches
 exit /B
 
 :openzone
+rem Whitelist cmd.exe in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
 setlocal EnableDelayedExpansion
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-rem Whitelist cmd.exe in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
+rem Controlled Folder Access doesn't exist on Linux
 if defined _LINUX goto openzone_edit
+rem Or before Windows 10
 if %_WINVER% LSS 100 goto openzone_edit
+
 call :cfa_check
 if %_IS_CFA_ENABLED%==0 goto openzone_edit
-call :powershell_check
 
-if not defined _PWSH_CMD (
-	echo %cError%[-] Execution aborted: Powershell is not installed.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	goto end
-)
+call :powershell_check
+if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
 
 rem Check in the registry if it's already been whitelisted
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do goto openzone_edit
@@ -623,7 +609,6 @@ if defined _CFG_FILE_FOUND (
 	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 goto end
 
 :powershell_check
@@ -632,17 +617,16 @@ for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
 if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
 
 for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
-if %ERRORLEVEL%==0 set "_PWSH_CMD=pwsh" & exit /B
-
-echo %cMenu%[!] WARNING: PowerShell not found, some options may fail.%cReset%
-echo Make sure it's installed and is in your PATH environment variable.
-echo:
+if %ERRORLEVEL%==0 set "_PWSH_CMD=pwsh"
 
 exit /B
 
 :update
+call :powershell_check
+
 rem Download repo version file
 echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
+ping -n 2 127.0.0.1 > nul
 
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
 set "_FILE=%TEMP%\RegPatchDS1_version.txt"
@@ -652,6 +636,7 @@ rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 
 echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
 echo %cInfo%[~] Comparing the local version against the version on GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -662,9 +647,6 @@ del "%_FILE%"
 rem Compare version numbers (without dots)
 if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the latest version.%cReset% & goto end
 
-set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
-set "_FILE=%TEMP%\RegPatchDS1.bat"
-
 echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available! %cReset%
 echo:
 echo %cTitle%Would you like to update? [Y,N]%cReset%
@@ -674,15 +656,17 @@ if not %ERRORLEVEL%==1 goto end
 
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 echo %cInfo%[~] Downloading the new reg patch...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
+set "_FILE=%TEMP%\RegPatchDS1.bat"
 call :download "%_URL%" "%_FILE%"
 
 rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 
-echo %cSuccess%[+] Update complete.%cReset%
-ping -n 2 127.0.0.1 > nul
-
 rem Back up the old reg patch and replace it with the new one
+echo %cSuccess%[+] Update complete.%cReset%
 copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
 attrib -R "%~0"
 move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
@@ -701,6 +685,7 @@ echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)%cRe
 goto end
 
 :end
+ping -n 2 127.0.0.1 > nul
 echo:
 echo %cTitle%================================================================================%cReset%
 echo %cInfo%[~] Exiting...%cReset%

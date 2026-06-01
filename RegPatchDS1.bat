@@ -453,10 +453,14 @@ ping -n 2 127.0.0.1 > nul
 	echo "EXE Path"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 ) > %_REG_FILE%
 
-echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
-echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
-ping -n 2 127.0.0.1 > nul
+if exist %_REG_FILE% (
+	echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
+	echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
+) else (
+	echo %cError%[-] ERROR: failed to export registry entries.%cReset%
+)
 
+ping -n 2 127.0.0.1 > nul
 goto end
 
 :gmax

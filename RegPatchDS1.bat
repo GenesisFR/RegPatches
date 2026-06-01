@@ -78,8 +78,8 @@ call :display_header
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already
 echo %cInfo%[~] Checking if the script is run as admin...%cReset%
-fsutil dirty query %SystemDrive% > nul
 ping -n 2 127.0.0.1 > nul
+fsutil dirty query %SystemDrive% > nul
 
 if not %ERRORLEVEL%==0 (
 	echo %cError%[-] ERROR: administrator rights required.%cReset%

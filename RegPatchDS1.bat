@@ -25,7 +25,7 @@ if defined _LINUX goto parse_args
 :windows_version
 for /f "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
 
-rem Keep just the major and minor Windows version (without the dot for numerical comparisons)
+rem Merge the major and minor Windows version (without the dot for numerical comparisons)
 rem major=%%G minor=%%H build=%%I
 for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H" & set "_BUILD=%%I"
 
@@ -39,6 +39,7 @@ rem 63 = Windows Server 2012 R2
 rem 100 = Windows 10 / Windows Server 2016/2019/2022
 rem 1002xxxx = Windows 11
 
+rem The script won't work properly before Windows 2000
 if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
 
 rem Don't enable multi-color output on unsupported systems (before Windows 10 1909)
@@ -382,71 +383,6 @@ if %ERRORLEVEL%==1 (
 ping -n 2 127.0.0.1 > nul
 exit /B
 
-:edit_ini
-rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
-rem Store the beginning of the config file to a temp file
-set "_CFG_FILE=%~1"
-set "_CFG_FILE_TEMP=%~1.tmp"
-set "_TARGET_SECTION=multiplayer"
-
-del /F "%_CFG_FILE_TEMP%" > nul 2>&1
-set "_IN_SECTION=0"
-
-rem Read the config file line by line
-rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
-for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
-	set "_LINE=%%L"
-
-	rem Section detection logic
-	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /f "delims=[]" %%S in ("!_LINE!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
-		)
-	)
-
-	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION!==0 (
-		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
-	) else (
-		rem Append the MP section to the temp file
-		(
-			echo:
-			echo [multiplayer]
-			echo gun_server = gz.exsurge.net
-			echo gun_server_port = 2300
-			echo news_server = gz.exsurge.net
-			echo news_server_port = 2301
-			echo news_server_file = news.txt
-			echo autoupdate_server = gz.exsurge.net
-			echo autoupdate_proxy = gz.exsurge.net
-			echo:
-			echo [debug]
-		) >> "%_CFG_FILE_TEMP%"
-
-		exit /B
-	)
-)
-
-rem No MP section was found
-if !_IN_SECTION!==0 (
-	rem Append the MP section to the temp file
-	(
-		echo:
-		echo [multiplayer]
-		echo gun_server = gz.exsurge.net
-		echo gun_server_port = 2300
-		echo news_server = gz.exsurge.net
-		echo news_server_port = 2301
-		echo news_server_file = news.txt
-		echo autoupdate_server = gz.exsurge.net
-		echo autoupdate_proxy = gz.exsurge.net
-		echo:
-		echo [debug]
-	) >> "%_CFG_FILE_TEMP%"
-)
-
-exit /B
-
 :export
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
@@ -587,7 +523,7 @@ setlocal EnableDelayedExpansion
 rem Update the DS config file if it exists
 if exist "%_CFG_FILE_DS%" (
 	set "_CFG_FILE_FOUND=1"
-	call :edit_ini "%_CFG_FILE_DS%"
+	call :openzone_edit_ini "%_CFG_FILE_DS%"
 
 	rem Overwrite the original config file (even if it was read-only)
 	attrib -R "%_CFG_FILE_DS%"
@@ -597,7 +533,7 @@ if exist "%_CFG_FILE_DS%" (
 rem Update the LOA config file if it exists
 if exist "%_CFG_FILE_LOA%" (
 	set "_CFG_FILE_FOUND=1"
-	call :edit_ini "%_CFG_FILE_LOA%"
+	call :openzone_edit_ini "%_CFG_FILE_LOA%"
 
 	rem Overwrite the original config file (even if it was read-only)
 	attrib -R "%_CFG_FILE_LOA%"
@@ -613,6 +549,71 @@ if defined _CFG_FILE_FOUND (
 )
 
 goto end
+
+:openzone_edit_ini
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
+rem Store the beginning of the config file to a temp file
+set "_CFG_FILE=%~1"
+set "_CFG_FILE_TEMP=%~1.tmp"
+set "_TARGET_SECTION=multiplayer"
+
+del /F "%_CFG_FILE_TEMP%" > nul 2>&1
+set "_IN_SECTION=0"
+
+rem Read the config file line by line
+rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
+for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
+	set "_LINE=%%L"
+
+	rem Section detection logic
+	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
+		for /f "delims=[]" %%S in ("!_LINE!") do (
+			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
+		)
+	)
+
+	rem Write the current line to the temp file until we reach the MP section
+	if !_IN_SECTION!==0 (
+		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
+	) else (
+		rem Append the MP section to the temp file
+		(
+			echo:
+			echo [multiplayer]
+			echo gun_server = gz.exsurge.net
+			echo gun_server_port = 2300
+			echo news_server = gz.exsurge.net
+			echo news_server_port = 2301
+			echo news_server_file = news.txt
+			echo autoupdate_server = gz.exsurge.net
+			echo autoupdate_proxy = gz.exsurge.net
+			echo:
+			echo [debug]
+		) >> "%_CFG_FILE_TEMP%"
+
+		exit /B
+	)
+)
+
+rem No MP section was found
+if !_IN_SECTION!==0 (
+	rem Append the MP section to the temp file
+	(
+		echo:
+		echo [multiplayer]
+		echo gun_server = gz.exsurge.net
+		echo gun_server_port = 2300
+		echo news_server = gz.exsurge.net
+		echo news_server_port = 2301
+		echo news_server_file = news.txt
+		echo autoupdate_server = gz.exsurge.net
+		echo autoupdate_proxy = gz.exsurge.net
+		echo:
+		echo [debug]
+	) >> "%_CFG_FILE_TEMP%"
+)
+
+exit /B
 
 :powershell_check
 rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP/Server 2003)

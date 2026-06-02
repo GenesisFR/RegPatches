@@ -47,7 +47,7 @@ if %_WINVER% LSS 100 goto parse_args
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Set up ANSI escape character for multi-color output on Windows 10 or later
-for /F %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
+for /f %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
 set "cReset=%ESC%[0m"
 set "cTitle=%ESC%[96m"
 set "cMenu=%ESC%[93m"
@@ -393,12 +393,12 @@ set "_IN_SECTION=0"
 
 rem Read the config file line by line
 rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
-for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
+for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 	set "_LINE=%%L"
 
 	rem Section detection logic
 	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /F "delims=[]" %%S in ("!_LINE!") do (
+		for /f "delims=[]" %%S in ("!_LINE!") do (
 			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
 		)
 	)
@@ -494,7 +494,7 @@ rem Check where the game is installed from the registry
 echo:
 echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
 
-for /F "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
+for /f "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
 
 if "%_INSTALL_LOCATION%"=="" echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
 
@@ -569,7 +569,8 @@ if %_IS_CFA_ENABLED%==0 goto openzone_edit
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
 
-rem Whitelist cmd.exe in Controlled Folder Access (otherwise the COPY and MOVE commands won't work) and restart the reg patch if necessary (using the same option)
+rem Whitelist the command prompt in Controlled Folder Access (otherwise the COPY and MOVE commands won't work)
+rem and restart the reg patch if necessary (using the same option)
 call :cfa_whitelist_cmd
 if %ERRORLEVEL%==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
 
@@ -625,10 +626,28 @@ exit /B
 :update
 call :powershell_check
 
-rem Download repo version file
+rem Create an empty file to check if we have write permissions in the current directory
+copy nul empty > nul 2>&1
+
+if not exist empty (
+	echo %cError%[-] ERROR: The Windows Command Prompt cannot write to the current directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+
+	if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
+
+	rem Whitelist the command prompt in Controlled Folder Access (otherwise the COPY and MOVE commands won't work)
+	rem and restart the reg patch if necessary (using the same option)
+	setlocal EnableDelayedExpansion
+	call :cfa_whitelist_cmd
+	if !ERRORLEVEL!==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
+	setlocal DisableDelayedExpansion
+)
+
+del empty
 echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
+rem Download the version file from the repo
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1_version.txt"
 set "_FILE=%TEMP%\RegPatchDS1_version.txt"
 call :download "%_URL%" "%_FILE%"
@@ -642,7 +661,7 @@ echo %cInfo%[~] Comparing the local version against the version on GitHub...%cRe
 ping -n 2 127.0.0.1 > nul
 
 rem Store the file content into a variable
-for /f %%G in ('type "%TEMP%\RegPatchDS1_version.txt"') do set _REPO_VERSION=%%G
+for /f "usebackq" %%G in ("%_FILE%") do set _REPO_VERSION=%%G
 del "%_FILE%"
 
 rem Compare version numbers (without dots)
@@ -659,6 +678,7 @@ echo %cDim%---------------------------------------------------------------------
 echo %cInfo%[~] Downloading the new reg patch...%cReset%
 ping -n 2 127.0.0.1 > nul
 
+rem Download the reg patch from the repo
 set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/master/RegPatchDS1.bat"
 set "_FILE=%TEMP%\RegPatchDS1.bat"
 call :download "%_URL%" "%_FILE%"
@@ -666,15 +686,18 @@ call :download "%_URL%" "%_FILE%"
 rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 
-rem Back up the old reg patch and replace it with the new one
-echo %cSuccess%[+] Update complete.%cReset%
-copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul
-attrib -R "%~0"
-move /Y "%_FILE%" "%~f0" > nul & call :end & exit /B
+rem Back up the old reg patch
+copy /Y "%~f0" "%~dpn0.v%_VERSION%.bat" > nul 2>&1
+ping -n 2 127.0.0.1 > nul
+if exist "%~dpn0.v%_VERSION%.bat" echo %cInfo%[i] A copy of the old reg patch was created as "%~dpn0.v%_VERSION%.bat".%cReset%
 
-goto end
+rem And replace it with the new one
+attrib -R "%~0" > nul 2>&1
+ping -n 2 127.0.0.1 > nul
+move /Y "%_FILE%" "%~f0" > nul 2>&1 && echo %cSuccess%[+] Update complete.%cReset% & call :end & exit /B
 
 :usage
+rem Display usage information
 call :display_header
 
 set "_LAST_OPTION_ID=10"

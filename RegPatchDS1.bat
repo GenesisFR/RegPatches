@@ -27,7 +27,7 @@ for /f "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
 
 rem Keep just the major and minor Windows version (without the dot for numerical comparisons)
 rem major=%%G minor=%%H build=%%I
-for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H"
+for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H" & set "_BUILD=%%I"
 
 rem 50 = Windows 2000
 rem 51 = Windows XP
@@ -41,8 +41,9 @@ rem 1002xxxx = Windows 11
 
 if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
 
-rem Don't enable multi-color output on unsupported systems
+rem Don't enable multi-color output on unsupported systems (before Windows 10 1909)
 if %_WINVER% LSS 100 goto parse_args
+if %_WINVER%==100 if %_BUILD% LSS 18363 goto parse_args
 
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478

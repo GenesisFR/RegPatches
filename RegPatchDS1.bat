@@ -268,13 +268,13 @@ if exist "%_INSTALL_LOCATION%\%1" (
 exit /B
 
 :cfa_whitelist_all
-if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer, nothing to do.%cReset% & goto end
+if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer.%cReset% & goto end
 
 call :cfa_check
-if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled, nothing to do.%cReset% & goto end
+if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled.%cReset% & goto end
 
 call :powershell_check
-if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
+if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
 
 echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
 echo %cDim%--------------------------------------------------------------------------------%cReset%
@@ -288,6 +288,25 @@ call :cfa_whitelist DungeonSiege.exe
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 goto end
+
+:cfa_whitelist_cmd
+rem Check in the registry if CMD has already been whitelisted
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B
+
+echo %cInfo%[i] The Windows Command Prompt needs to be whitelisted in Controlled Folder Access.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+pause
+echo:
+
+%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+
+echo %cSuccess%[+] Whitelisting successful.%cReset%
+echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem This will let us know we need to restart the reg patch because Controlled Folder Access changes don't come into effect until the next session
+exit /B 1
 
 :cleanup
 echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
@@ -536,8 +555,6 @@ start "" https://github.com/GenesisFR/RegPatches
 exit /B
 
 :openzone
-rem Whitelist cmd.exe in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
-setlocal EnableDelayedExpansion
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -550,28 +567,11 @@ call :cfa_check
 if %_IS_CFA_ENABLED%==0 goto openzone_edit
 
 call :powershell_check
-if not defined _PWSH_CMD echo %cError%[-] Execution aborted: Powershell is not installed.%cReset% & goto end
+if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
 
-rem Check in the registry if it's already been whitelisted
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do goto openzone_edit
-
-echo %cInfo%[i] Controlled Folder Access requires whitelisting your system shell terminal environment.%cReset%
-echo:
-ping -n 2 127.0.0.1 > nul
-pause
-echo:
-
-!_PWSH_CMD! Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
-
-echo %cSuccess%[+] Whitelisting successful.%cReset%
-echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
-ping -n 2 127.0.0.1 > nul
-call :end
-cls
-
-rem Restart the reg patch using the same option because Controlled Folder Access changes don't come into effect until the next session
-cmd /c "%~f0" -c 6
-exit /B
+rem Whitelist cmd.exe in Controlled Folder Access (otherwise the COPY and MOVE commands won't work) and restart the reg patch if necessary (using the same option)
+call :cfa_whitelist_cmd
+if %ERRORLEVEL%==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
 
 :openzone_edit
 rem https://serverfault.com/a/701644
@@ -580,6 +580,7 @@ for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do 
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
+setlocal EnableDelayedExpansion
 
 rem Update the DS config file if it exists
 if exist "%_CFG_FILE_DS%" (

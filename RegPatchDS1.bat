@@ -35,8 +35,8 @@ rem 52 = Windows Server 2003
 rem 60 = Windows Vista / Windows Server 2008
 rem 61 = Windows 7 / Windows Server 2008 R2
 rem 62 = Windows 8 / Windows Server 2012
-rem 63 = Windows Server 2012 R2
-rem 100 = Windows 10 / Windows Server 2016/2019/2022
+rem 63 = Windows 8.1 / Windows Server 2012 R2
+rem 1001xxxx = Windows 10 / Windows Server 2016/2019/2022
 rem 1002xxxx = Windows 11
 
 rem The script won't work properly before Windows 2000
@@ -156,7 +156,7 @@ if exist DungeonSiege.exe (
 	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 
-	rem Steam/GOG don't update the Wine registry when installing games and its CMD sends errors to STDOUT so we skip the install detection
+	rem Steam/GOG don't update the Wine registry when installing games and its command prompt sends errors to STDOUT so we skip the install detection
 	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset% & goto end
 )
 
@@ -292,7 +292,7 @@ echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 goto end
 
 :cfa_whitelist_cmd
-rem Check in the registry if CMD has already been whitelisted
+rem Check in the registry if the command prompt has already been whitelisted
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B
 
 echo %cInfo%[i] The Windows Command Prompt needs to be whitelisted in Controlled Folder Access.%cReset%
@@ -336,17 +336,28 @@ exit /B
 
 :download [url] [file_path]
 rem Requires https://curl.se/windows (installed by default starting from Windows 10)
+echo %cInfo%[i] Downloading using curl...%cReset%
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to powershell (installed by default starting from Windows 7)
-if not exist "%2" if defined _PWSH_CMD %_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
+if not exist "%2" (
+	if defined _PWSH_CMD (
+		echo %cInfo%[i] Falling back to Powershell...%cReset%
+		%_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
+	)
+)
 
 rem Fall back to bitsadmin (may not work on Vista, won't work on older systems)
-if not exist "%2" bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
+if not exist "%2" (
+	echo %cInfo%[i] Falling back to bitsadmin...%cReset%
+	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
+)
+
+rem We could also try with VBScript as a last resort but this is overkill at this point
 
 if not exist "%2" (
-	echo %cError%[-] Download failed: you probably don't have an internet connection.%cReset%
-	echo %cInfo%[i] If you're not on Windows 10/11, make sure you have curl installed.%cReset%
+	echo %cError%[-] ERROR: download failed.%cReset%
+	echo %cInfo%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
 	exit /B 1
 )
 
@@ -506,7 +517,7 @@ if %_IS_CFA_ENABLED%==0 goto openzone_edit
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
 
-rem Whitelist the command prompt in Controlled Folder Access (otherwise the COPY and MOVE commands won't work)
+rem Whitelist the command prompt in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
 rem and restart the reg patch if necessary (using the same option)
 call :cfa_whitelist_cmd
 if %ERRORLEVEL%==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
@@ -550,7 +561,7 @@ if defined _CFG_FILE_FOUND (
 
 goto end
 
-:openzone_edit_ini
+:openzone_edit_ini [ini]
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
 rem Store the beginning of the config file to a temp file
 set "_CFG_FILE=%~1"

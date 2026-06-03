@@ -335,6 +335,10 @@ echo %cTitle%===================================================================
 exit /B
 
 :download [url] [file_path]
+rem Check if we have an internet connection
+ping google.com -n 1 -w 1000 > nul
+if %ERRORLEVEL%==1 echo %cError%[-] ERROR: no internet connection detected.%cReset% & exit /B 404
+
 rem Requires https://curl.se/windows (installed by default starting from Windows 10)
 echo %cInfo%[i] Downloading using curl...%cReset%
 curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
@@ -665,6 +669,8 @@ set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/mast
 set "_FILE=%TEMP%\RegPatchDS1_version.txt"
 call :download "%_URL%" "%_FILE%"
 
+rem No internet connection
+if %ERRORLEVEL%==404 goto end
 rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 
@@ -696,6 +702,8 @@ set "_URL=https://raw.githubusercontent.com/GenesisFR/RegPatches/refs/heads/mast
 set "_FILE=%TEMP%\RegPatchDS1.bat"
 call :download "%_URL%" "%_FILE%"
 
+rem No internet connection
+if %ERRORLEVEL%==404 goto end
 rem All download methods failed, open the repo
 if %ERRORLEVEL%==1 call :open_repo & goto end
 

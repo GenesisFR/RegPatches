@@ -216,11 +216,14 @@ if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLA
 
 if not defined _LINUX (
 	echo %cTitle%Please make a selection [1-a]:%cReset%
-	choice /C:1234567890a /N
+	choice /C:1234567890a /N > nul 2>&1
 ) else (
 	echo %cTitle%Please make a selection [1-7]:%cReset%
-	choice /C:1234567 /N
+	choice /C:1234567 /N > nul 2>&1
 )
+
+rem choice is missing
+if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: Make sure you have the choice command installed.%cReset% & goto end
 
 set "_CHOICE=%ERRORLEVEL%"
 
@@ -689,7 +692,10 @@ if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the lat
 echo %cInfo%[i] A new version ^(%_REPO_VERSION%^) is available! %cReset%
 echo:
 echo %cTitle%Would you like to update? [Y,N]%cReset%
-choice /N
+choice /N > nul 2>&1
+
+rem choice is missing
+if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: Make sure you have the choice command installed.%cReset%
 
 if not %ERRORLEVEL%==1 goto end
 

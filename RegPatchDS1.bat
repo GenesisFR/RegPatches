@@ -171,6 +171,11 @@ if %ERRORLEVEL%==1 (
 )
 
 :menu
+rem Double the trailing backslash of the installation directory as it's interpreted as an escape character by the REG commands, which causes them
+rem to not work correctly when the game is installed at the root of a drive
+set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
+if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
+
 rem Automatically make a selection if arguments were passed
 if defined _CHOICE goto process_choice
 
@@ -209,18 +214,12 @@ echo:
 echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press 1.
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 
-rem Double the trailing backslash from the installation directory as it's interpreted as an escape character by the REG commands, which causes them
-rem to not work correctly when the game is installed at the root of a drive
-set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
-if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
+rem List of valid choices
+set "_CHOICES=1234567890a"
+if defined _LINUX set "_CHOICES=1234567"
 
-if not defined _LINUX (
-	echo %cTitle%Please make a selection [1-a]:%cReset%
-	choice /C:1234567890a /N > nul 2>&1
-) else (
-	echo %cTitle%Please make a selection [1-7]:%cReset%
-	choice /C:1234567 /N > nul 2>&1
-)
+echo %cTitle%Please make a selection [1-%_CHOICES:~-1%]:%cReset%
+choice /C:%_CHOICES% /N > nul 2>&1
 
 rem choice is missing
 if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: Make sure you have the choice command installed.%cReset% & goto end

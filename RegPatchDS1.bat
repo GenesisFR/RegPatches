@@ -390,6 +390,8 @@ rem https://serverfault.com/a/701644
 rem Get the path to My Documents
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
+if "%_MY_DOCUMENTS%"=="" echo %cError%[-] ERROR: couldn't locate the path to My Documents.%cReset% & goto end
+
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
 
@@ -415,7 +417,7 @@ if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 ) else (
 	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
-	if %_IS_CFA_ENABLED%==1 echo %cError%[-] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
+	if "%_IS_CFA_ENABLED%"=="1" echo %cError%[-] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
 )
 
 goto end
@@ -523,13 +525,13 @@ if exist "%_INSTALL_LOCATION%\%1" (
 exit /B
 
 :cfa_whitelist_cmd
-call :cfa_check
-if %_IS_CFA_ENABLED%==0 exit /B 0
-
 rem Controlled Folder Access doesn't exist on Linux
 if defined _LINUX exit /B 0
 rem Or before Windows 10
 if %_WINVER% LSS 100 exit /B 0
+
+call :cfa_check
+if %_IS_CFA_ENABLED%==0 exit /B 0
 
 rem Check in the registry if the command prompt has already been whitelisted
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0

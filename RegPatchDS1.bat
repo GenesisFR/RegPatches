@@ -90,8 +90,8 @@ fsutil dirty query %SystemDrive% > nul
 
 if not %ERRORLEVEL%==0 (
 	echo %cError%[-] ERROR: administrator rights required.%cReset%
-	echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
 	ping -n 2 127.0.0.1 > nul
+	echo %cInfo%[~] Attempting to elevate privileges via UAC...%cReset%
 
 	echo set UAC = CreateObject^("Shell.Application"^) > "%TEMP%\ElevateMe.vbs"
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
@@ -238,7 +238,7 @@ echo:
 rem That's the result of a Ctrl+C
 if %_CHOICE%==0 goto menu
 
-if %_CHOICE%==1 call :ds1 & echo: & call :ds1loa & goto end
+if %_CHOICE%==1 call :ds1 & ping -n 2 127.0.0.1 > nul & echo: & call :ds1loa & goto end
 if %_CHOICE%==2 call :ds1 & goto end
 if %_CHOICE%==3 call :ds1loa & goto end
 if %_CHOICE%==4 goto cleanup
@@ -316,6 +316,8 @@ ping -n 2 127.0.0.1 > nul
 
 if exist %_REG_FILE% (
 	echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
+	echo:
+	ping -n 2 127.0.0.1 > nul
 	echo %cInfo%[i] They can be imported from the "%_REG_FILE%" file in the current directory.%cReset%
 ) else (
 	echo %cError%[-] ERROR: failed to export registry entries.%cReset%
@@ -334,6 +336,7 @@ if exist gmax.exe (
 	echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
 ) else (
 	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
 	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
 )
 
@@ -360,6 +363,8 @@ rem Windows 2000/XP/Server 2003
 
 if %ERRORLEVEL%==0 (
 	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+	echo:
+	ping -n 2 127.0.0.1 > nul
 	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 1" to add the game to GameRanger.%cReset%
 	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
 	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
@@ -539,6 +544,7 @@ echo:
 %_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
 
 echo %cSuccess%[+] Whitelisting successful.%cReset%
+ping -n 2 127.0.0.1 > nul
 echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -579,6 +585,7 @@ rem We could also try with VBScript as a last resort but this is overkill at thi
 
 if not exist "%2" (
 	echo %cError%[-] ERROR: download failed.%cReset%
+	ping -n 2 127.0.0.1 > nul
 	echo %cInfo%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
 	exit /B 1
 )
@@ -598,7 +605,6 @@ if %ERRORLEVEL%==1 (
 	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 exit /B
 
 :ds1loa
@@ -613,19 +619,21 @@ if %ERRORLEVEL%==1 (
 	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 )
 
-ping -n 2 127.0.0.1 > nul
 exit /B
 
 :install_detection [platform] [reg_key] [reg_value]
 rem Check where the game is installed from the registry
 echo:
 echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
+ping -n 2 127.0.0.1 > nul
 
 for /f "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
 
 if "%_INSTALL_LOCATION%"=="" echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
 
 echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
 echo %cInfo%[~] Scanning for game executables...%cReset%
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 ping -n 2 127.0.0.1 > nul

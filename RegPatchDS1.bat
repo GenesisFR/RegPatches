@@ -77,10 +77,10 @@ if %_CHOICE% GTR 10 goto usage
 if defined _LINUX if %_CHOICE% GTR 6 goto usage
 
 :admin_check
+call :display_header
+
 rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
 if defined _LINUX goto init
-
-call :display_header
 
 rem https://ss64.com/vb/syntax-elevate.html
 rem Restart the script as admin if it wasn't the case already

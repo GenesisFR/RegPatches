@@ -589,42 +589,31 @@ for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 	if !_IN_SECTION!==0 (
 		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
 	) else (
-		rem Append the MP section to the temp file
-		(
-			echo:
-			echo [multiplayer]
-			echo gun_server = gz.exsurge.net
-			echo gun_server_port = 2300
-			echo news_server = gz.exsurge.net
-			echo news_server_port = 2301
-			echo news_server_file = news.txt
-			echo autoupdate_server = gz.exsurge.net
-			echo autoupdate_proxy = gz.exsurge.net
-			echo:
-			echo [debug]
-		) >> "%_CFG_FILE_TEMP%"
-
+		call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
 		exit /B
 	)
 )
 
 rem No MP section was found
-if !_IN_SECTION!==0 (
-	rem Append the MP section to the temp file
-	(
-		echo:
-		echo [multiplayer]
-		echo gun_server = gz.exsurge.net
-		echo gun_server_port = 2300
-		echo news_server = gz.exsurge.net
-		echo news_server_port = 2301
-		echo news_server_file = news.txt
-		echo autoupdate_server = gz.exsurge.net
-		echo autoupdate_proxy = gz.exsurge.net
-		echo:
-		echo [debug]
-	) >> "%_CFG_FILE_TEMP%"
-)
+if !_IN_SECTION!==0 call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
+
+exit /B
+
+:openzone_edit_ini_append_mp_section [file]
+rem Append the MP section to the file specified
+(
+	echo:
+	echo [multiplayer]
+	echo gun_server = gz.exsurge.net
+	echo gun_server_port = 2300
+	echo news_server = gz.exsurge.net
+	echo news_server_port = 2301
+	echo news_server_file = news.txt
+	echo autoupdate_server = gz.exsurge.net
+	echo autoupdate_proxy = gz.exsurge.net
+	echo:
+	echo [debug]
+) >> "%~1"
 
 exit /B
 

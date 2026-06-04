@@ -6,9 +6,13 @@ set "_VERSION=1.60"
 title Reg Patcher for Dungeon Siege 1 by Genesis (v%_VERSION%)
 echo:
 
+rem ===============================================================================================
+rem ======================================= PRE-MENU CHECKS =======================================
+rem ===============================================================================================
+
 :linux_check
 rem https://www.reddit.com/r/Batch/comments/odynta/check_whether_bat_is_run_from_wine
-rem Check if run from Linux
+rem Test a few commands to determine if we're on Linux
 fsutil | find "dirty" > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 break > nul 2>&1
@@ -23,9 +27,10 @@ if not %ERRORLEVEL%==0 set "_LINUX=1"
 if defined _LINUX goto parse_args
 
 :windows_version
+rem Store the Windows version
 for /f "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
 
-rem Merge the major and minor Windows version (without the dot for numerical comparisons)
+rem Merge the major and minor version (without the dot for numerical comparisons)
 rem major=%%G minor=%%H build=%%I
 for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H" & set "_BUILD=%%I"
 
@@ -253,27 +258,8 @@ rem This is only here to help with development since we should never reach this 
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
 rem ===============================================================================================
-rem ========================================= SUBROUTINES =========================================
+rem ======================================== CHOICE LABELS ========================================
 rem ===============================================================================================
-
-:cfa_check
-rem Check in the registry if Controlled Folder Access is enabled
-set "_IS_CFA_ENABLED=0"
-
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
-
-rem The value in the registry is hexadecimal so we need to convert it to decimal
-set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
-
-exit /B
-
-:cfa_whitelist [exe]
-if exist "%_INSTALL_LOCATION%\%1" (
-	echo %cInfo%[~] Whitelisting %1... %cReset%
-	%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
-)
-
-exit /B
 
 :cfa_whitelist_all
 if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer.%cReset% & goto end
@@ -293,36 +279,6 @@ for %%G in (DSLOA.exe,DSLOAMod.exe,DSMod.exe,DSVideoConfig.exe,DungeonSiege.exe)
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 goto end
 
-:cfa_whitelist_cmd
-rem Controlled Folder Access doesn't exist on Linux
-if defined _LINUX exit /B 0
-rem Or before Windows 10
-if %_WINVER% LSS 100 exit /B 0
-
-call :cfa_check
-if %_IS_CFA_ENABLED%==0 exit /B 0
-
-rem Check in the registry if the command prompt has already been whitelisted
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0
-
-call :powershell_check
-if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & exit /B 1
-
-echo %cInfo%[i] The Windows Command Prompt needs to be whitelisted in Controlled Folder Access.%cReset%
-echo:
-ping -n 2 127.0.0.1 > nul
-pause
-echo:
-
-%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
-
-echo %cSuccess%[+] Whitelisting successful.%cReset%
-echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
-ping -n 2 127.0.0.1 > nul
-
-rem This will let us know we need to restart the reg patch because Controlled Folder Access changes don't come into effect until the next session
-exit /B 2
-
 :cleanup
 echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
@@ -339,77 +295,6 @@ if %ERRORLEVEL%==1 (
 )
 
 goto end
-
-:display_header
-cls
-echo %cTitle%================================================================================%cReset%
-echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
-echo %cTitle%================================================================================%cReset%
-exit /B
-
-:download [url] [file_path]
-rem Check if we have an internet connection
-ping google.com -n 1 -w 1000 > nul
-if %ERRORLEVEL%==1 echo %cError%[-] ERROR: no internet connection detected.%cReset% & exit /B 404
-
-rem Requires https://curl.se/windows (installed by default starting from Windows 10)
-echo %cInfo%[i] Downloading using curl...%cReset%
-curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
-
-rem Fall back to powershell (installed by default starting from Windows 7)
-if not exist "%2" (
-	if defined _PWSH_CMD (
-		echo %cInfo%[i] Falling back to Powershell...%cReset%
-		%_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
-	)
-)
-
-rem Fall back to bitsadmin (may not work on Vista, won't work on older systems)
-if not exist "%2" (
-	echo %cInfo%[i] Falling back to bitsadmin...%cReset%
-	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
-)
-
-rem We could also try with VBScript as a last resort but this is overkill at this point
-
-if not exist "%2" (
-	echo %cError%[-] ERROR: download failed.%cReset%
-	echo %cInfo%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
-	exit /B 1
-)
-
-echo %cSuccess%[+] Download complete.%cReset%
-exit /B
-
-:ds1
-echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
-ping -n 2 127.0.0.1 > nul
-
-reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
-
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
-
-ping -n 2 127.0.0.1 > nul
-exit /B
-
-:ds1loa
-echo %cInfo%[~] Adding registry entries for Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
-
-reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
-
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
-
-ping -n 2 127.0.0.1 > nul
-exit /B
 
 :export
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
@@ -431,7 +316,7 @@ ping -n 2 127.0.0.1 > nul
 
 if exist %_REG_FILE% (
 	echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
-	echo %cInfo%[i] A new file called "%_REG_FILE%" has been created in the current directory.%cReset%
+	echo %cInfo%[i] They can be imported from the "%_REG_FILE%" file in the current directory.%cReset%
 ) else (
 	echo %cError%[-] ERROR: failed to export registry entries.%cReset%
 )
@@ -453,35 +338,6 @@ if exist gmax.exe (
 )
 
 goto end
-
-:install_detection [platform] [reg_key] [reg_value]
-rem Check where the game is installed from the registry
-echo:
-echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
-
-for /f "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
-
-if "%_INSTALL_LOCATION%"=="" echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
-
-echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
-echo %cInfo%[~] Scanning for game executables...%cReset%
-echo %cDim%--------------------------------------------------------------------------------%cReset%
-ping -n 2 127.0.0.1 > nul
-
-rem Check for game executables in the installation directory
-if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
-	echo %cSuccess%[+] Found DungeonSiege.exe in the %1 installation directory.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	exit /B
-) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
-	echo %cSuccess%[+] Found DSLOA.exe in the %1 installation directory.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	exit /B
-) else (
-	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
-	ping -n 2 127.0.0.1 > nul
-	exit /B 1
-)
 
 :junction
 rem https://stackoverflow.com/a/8071683
@@ -512,12 +368,6 @@ if %ERRORLEVEL%==0 (
 )
 
 goto end
-
-:open_repo
-echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
-pause
-start "" https://github.com/GenesisFR/RegPatches
-exit /B
 
 :openzone
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
@@ -562,70 +412,6 @@ if defined _CFG_FILE_FOUND (
 )
 
 goto end
-
-:openzone_edit_ini [ini]
-rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
-rem Store the beginning of the config file to a temp file
-set "_CFG_FILE=%~1"
-set "_CFG_FILE_TEMP=%~1.tmp"
-set "_TARGET_SECTION=multiplayer"
-
-del /F "%_CFG_FILE_TEMP%" > nul 2>&1
-set "_IN_SECTION=0"
-
-rem Read the config file line by line
-rem By default, "for /f" skips commented lines, however using "eol=" creates a weird syntax error on Linux, hence the * character that's usually unused
-for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
-	set "_LINE=%%L"
-
-	rem Section detection logic
-	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /f "delims=[]" %%S in ("!_LINE!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
-		)
-	)
-
-	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION!==0 (
-		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
-	) else (
-		call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
-		exit /B
-	)
-)
-
-rem No MP section was found
-if !_IN_SECTION!==0 call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
-
-exit /B
-
-:openzone_edit_ini_append_mp_section [file]
-rem Append the MP section to the file specified
-(
-	echo:
-	echo [multiplayer]
-	echo gun_server = gz.exsurge.net
-	echo gun_server_port = 2300
-	echo news_server = gz.exsurge.net
-	echo news_server_port = 2301
-	echo news_server_file = news.txt
-	echo autoupdate_server = gz.exsurge.net
-	echo autoupdate_proxy = gz.exsurge.net
-	echo:
-	echo [debug]
-) >> "%~1"
-
-exit /B
-
-:powershell_check
-rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP/Server 2003)
-for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
-if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
-
-for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
-if %ERRORLEVEL%==0 set "_PWSH_CMD=pwsh"
-
-exit /B
 
 :update
 call :powershell_check
@@ -705,6 +491,230 @@ rem And replace it with the new one
 attrib -R "%~0" > nul 2>&1
 ping -n 2 127.0.0.1 > nul
 move /Y "%_FILE%" "%~f0" > nul 2>&1 && echo %cSuccess%[+] Update complete.%cReset% & call :end & exit /B
+
+rem ===============================================================================================
+rem ========================================= SUBROUTINES =========================================
+rem ===============================================================================================
+
+:cfa_check
+rem Check in the registry if Controlled Folder Access is enabled
+set "_IS_CFA_ENABLED=0"
+
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
+
+rem The value in the registry is hexadecimal so we need to convert it to decimal
+set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
+
+exit /B
+
+:cfa_whitelist [exe]
+if exist "%_INSTALL_LOCATION%\%1" (
+	echo %cInfo%[~] Whitelisting %1... %cReset%
+	%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_INSTALL_LOCATION%\%1' > nul 2>&1
+)
+
+exit /B
+
+:cfa_whitelist_cmd
+rem Controlled Folder Access doesn't exist on Linux
+if defined _LINUX exit /B 0
+rem Or before Windows 10
+if %_WINVER% LSS 100 exit /B 0
+
+call :cfa_check
+if %_IS_CFA_ENABLED%==0 exit /B 0
+
+rem Check in the registry if the command prompt has already been whitelisted
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0
+
+call :powershell_check
+if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & exit /B 1
+
+echo %cInfo%[i] The Windows Command Prompt needs to be whitelisted in Controlled Folder Access.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+pause
+echo:
+
+%_PWSH_CMD% Add-MpPreference -ControlledFolderAccessAllowedApplications '%_COMSPEC%' > nul 2>&1
+
+echo %cSuccess%[+] Whitelisting successful.%cReset%
+echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem This will let us know we need to restart the reg patch because Controlled Folder Access changes don't come into effect until the next session
+exit /B 2
+
+:display_header
+cls
+echo %cTitle%================================================================================%cReset%
+echo %cTitle%                 DUNGEON SIEGE 1 REGISTRY PATCHER (v%_VERSION%)                 %cReset%
+echo %cTitle%================================================================================%cReset%
+exit /B
+
+:download [url] [file_path]
+rem Check if we have an internet connection
+ping google.com -n 1 -w 1000 > nul
+if %ERRORLEVEL%==1 echo %cError%[-] ERROR: no internet connection detected.%cReset% & exit /B 404
+
+rem Requires https://curl.se/windows (installed by default starting from Windows 10)
+echo %cInfo%[i] Downloading using curl...%cReset%
+curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
+
+rem Fall back to powershell (installed by default starting from Windows 7)
+if not exist "%2" (
+	if defined _PWSH_CMD (
+		echo %cInfo%[i] Falling back to Powershell...%cReset%
+		%_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
+	)
+)
+
+rem Fall back to bitsadmin (may not work on Vista, won't work on older systems)
+if not exist "%2" (
+	echo %cInfo%[i] Falling back to bitsadmin...%cReset%
+	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
+)
+
+rem We could also try with VBScript as a last resort but this is overkill at this point
+
+if not exist "%2" (
+	echo %cError%[-] ERROR: download failed.%cReset%
+	echo %cInfo%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
+	exit /B 1
+)
+
+echo %cSuccess%[+] Download complete.%cReset%
+exit /B
+
+:ds1
+echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
+
+:ds1loa
+echo %cInfo%[~] Adding registry entries for Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+
+if %ERRORLEVEL%==1 (
+	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
+) else (
+	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
+)
+
+ping -n 2 127.0.0.1 > nul
+exit /B
+
+:install_detection [platform] [reg_key] [reg_value]
+rem Check where the game is installed from the registry
+echo:
+echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
+
+for /f "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
+
+if "%_INSTALL_LOCATION%"=="" echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
+
+echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
+echo %cInfo%[~] Scanning for game executables...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Check for game executables in the installation directory
+if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
+	echo %cSuccess%[+] Found DungeonSiege.exe in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else if exist "%_INSTALL_LOCATION%\DSLOA.exe" (
+	echo %cSuccess%[+] Found DSLOA.exe in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B
+) else (
+	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	exit /B 1
+)
+
+:open_repo
+echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
+pause
+start "" https://github.com/GenesisFR/RegPatches
+exit /B
+
+:openzone_edit_ini [ini]
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-to-read-and-write-to-an-ini-file
+rem Store the beginning of the config file to a temp file
+set "_CFG_FILE=%~1"
+set "_CFG_FILE_TEMP=%~1.tmp"
+set "_TARGET_SECTION=multiplayer"
+
+del /F "%_CFG_FILE_TEMP%" > nul 2>&1
+set "_IN_SECTION=0"
+
+rem Read the config file line by line
+rem By default, "for /f" skips commented lines (starting with ';'), so we'd normally use "eol=" to preserve them, however it creates a weird syntax
+rem error on Linux, hence the '*' character that's usually unused
+for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
+	set "_LINE=%%L"
+
+	rem Section detection logic
+	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
+		for /f "delims=[]" %%S in ("!_LINE!") do (
+			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
+		)
+	)
+
+	rem Write the current line to the temp file until we reach the MP section
+	if !_IN_SECTION!==0 (
+		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
+	) else (
+		call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
+		exit /B
+	)
+)
+
+rem No MP section was found
+if !_IN_SECTION!==0 call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
+
+exit /B
+
+:openzone_edit_ini_append_mp_section [file]
+rem Append the MP section to the file specified
+(
+	echo:
+	echo [multiplayer]
+	echo gun_server = gz.exsurge.net
+	echo gun_server_port = 2300
+	echo news_server = gz.exsurge.net
+	echo news_server_port = 2301
+	echo news_server_file = news.txt
+	echo autoupdate_server = gz.exsurge.net
+	echo autoupdate_proxy = gz.exsurge.net
+	echo:
+	echo [debug]
+) >> "%~1"
+
+exit /B
+
+:powershell_check
+rem Check if Powershell is installed (we could use the WHERE command but it's not included by default on 2000/XP/Server 2003)
+for %%G in (powershell.exe) do echo %%~$PATH:G | find "powershell" > nul 2>&1
+if %ERRORLEVEL%==0 set "_PWSH_CMD=powershell" & exit /B
+
+for %%H in (pwsh.exe) do echo %%~$PATH:H | find "pwsh" > nul 2>&1
+if %ERRORLEVEL%==0 set "_PWSH_CMD=pwsh"
+
+exit /B
 
 :usage
 rem Display usage information

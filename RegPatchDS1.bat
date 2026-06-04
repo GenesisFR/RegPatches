@@ -294,8 +294,19 @@ echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 goto end
 
 :cfa_whitelist_cmd
+rem Controlled Folder Access doesn't exist on Linux
+if defined _LINUX exit /B 0
+rem Or before Windows 10
+if %_WINVER% LSS 100 exit /B 0
+
+call :cfa_check
+if %_IS_CFA_ENABLED%==0 exit /B 0
+
 rem Check in the registry if the command prompt has already been whitelisted
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B
+for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0
+
+call :powershell_check
+if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & exit /B 1
 
 echo %cInfo%[i] The Windows Command Prompt needs to be whitelisted in Controlled Folder Access.%cReset%
 echo:
@@ -310,7 +321,7 @@ echo %cInfo%[i] The reg patch will now restart for changes to take effect.%cRese
 ping -n 2 127.0.0.1 > nul
 
 rem This will let us know we need to restart the reg patch because Controlled Folder Access changes don't come into effect until the next session
-exit /B 1
+exit /B 2
 
 :cleanup
 echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Aranna...%cReset%
@@ -512,23 +523,12 @@ exit /B
 echo %cInfo%[~] Redirecting the ZoneMatch server to OpenZone...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-rem Controlled Folder Access doesn't exist on Linux
-if defined _LINUX goto openzone_edit
-rem Or before Windows 10
-if %_WINVER% LSS 100 goto openzone_edit
-
-call :cfa_check
-if %_IS_CFA_ENABLED%==0 goto openzone_edit
-
-call :powershell_check
-if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
-
 rem Whitelist the command prompt in Controlled Folder Access (otherwise the ATTRIB and MOVE commands won't work)
-rem and restart the reg patch if necessary (using the same option)
 call :cfa_whitelist_cmd
-if %ERRORLEVEL%==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
+if %ERRORLEVEL%==1 goto end
+rem Restart the reg patch if necessary (using the same option)
+if %ERRORLEVEL%==2 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
 
-:openzone_edit
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
@@ -637,13 +637,12 @@ if not exist empty (
 	echo %cError%[-] ERROR: The Windows Command Prompt cannot write to the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 
-	if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
-
-	rem Whitelist the command prompt in Controlled Folder Access (otherwise the COPY and MOVE commands won't work)
-	rem and restart the reg patch if necessary (using the same option)
 	setlocal EnableDelayedExpansion
+	rem Whitelist the command prompt in Controlled Folder Access (otherwise the COPY and MOVE commands won't work)
 	call :cfa_whitelist_cmd
-	if !ERRORLEVEL!==1 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
+	if !ERRORLEVEL!==1 goto end
+	rem Restart the reg patch if necessary (using the same option)
+	if !ERRORLEVEL!==2 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
 	setlocal DisableDelayedExpansion
 )
 

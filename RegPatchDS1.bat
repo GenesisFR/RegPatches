@@ -123,11 +123,12 @@ set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
 set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
-rem https://ss64.com/nt/syntax-64bit.html
-rem Check if we're on a 32-bit system
+rem Other important variables
 set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 
+rem https://ss64.com/nt/syntax-64bit.html
+rem Check if we're on a 32-bit system
 if %PROCESSOR_ARCHITECTURE%==x86 (
 	if not defined PROCESSOR_ARCHITEW6432 (
 		set "_PROGRAM_FILES=%ProgramFiles%"
@@ -333,6 +334,7 @@ ping -n 2 127.0.0.1 > nul
 if exist gmax.exe (
 	echo %cInfo%[~] Adding the environment variable for Gmax...%cReset%
 	setx GMAXLOC "%CD%" > nul
+	ping -n 2 127.0.0.1 > nul
 	echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
 ) else (
 	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
@@ -357,7 +359,7 @@ if %_WINVER% GTR 52 (
 rem Windows 2000/XP/Server 2003
 ) else (
 	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
-	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul 2>&1
 	junction "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
 )
 
@@ -521,13 +523,13 @@ if exist "%_INSTALL_LOCATION%\%1" (
 exit /B
 
 :cfa_whitelist_cmd
+call :cfa_check
+if %_IS_CFA_ENABLED%==0 exit /B 0
+
 rem Controlled Folder Access doesn't exist on Linux
 if defined _LINUX exit /B 0
 rem Or before Windows 10
 if %_WINVER% LSS 100 exit /B 0
-
-call :cfa_check
-if %_IS_CFA_ENABLED%==0 exit /B 0
 
 rem Check in the registry if the command prompt has already been whitelisted
 for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0

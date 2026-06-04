@@ -252,6 +252,10 @@ if %_CHOICE%==11 exit /B
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] Invalid choice detected.%cReset% & goto end
 
+rem ===============================================================================================
+rem ========================================= SUBROUTINES =========================================
+rem ===============================================================================================
+
 :cfa_check
 rem Check in the registry if Controlled Folder Access is enabled
 set "_IS_CFA_ENABLED=0"
@@ -284,11 +288,7 @@ echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Acces
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 ping -n 2 127.0.0.1 > nul
 
-call :cfa_whitelist DSLOA.exe
-call :cfa_whitelist DSLOAMod.exe
-call :cfa_whitelist DSMod.exe
-call :cfa_whitelist DSVideoConfig.exe
-call :cfa_whitelist DungeonSiege.exe
+for %%G in (DSLOA.exe,DSLOAMod.exe,DSMod.exe,DSVideoConfig.exe,DungeonSiege.exe) do call :cfa_whitelist %%G
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
 goto end
@@ -535,26 +535,21 @@ for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do 
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
+
 setlocal EnableDelayedExpansion
 
-rem Update the DS config file if it exists
-if exist "%_CFG_FILE_DS%" (
-	set "_CFG_FILE_FOUND=1"
-	call :openzone_edit_ini "%_CFG_FILE_DS%"
+rem Update the config files if they exist
+for %%G in ("%_CFG_FILE_DS%","%_CFG_FILE_LOA%") do (
+	set "_CFG_FILE=%%~G"
 
-	rem Overwrite the original config file (even if it was read-only)
-	attrib -R "%_CFG_FILE_DS%"
-	move /Y "%_CFG_FILE_DS%.tmp" "%_CFG_FILE_DS%" > nul
-)
+	if exist "!_CFG_FILE!" (
+		set "_CFG_FILE_FOUND=1"
+		call :openzone_edit_ini "!_CFG_FILE!"
 
-rem Update the LOA config file if it exists
-if exist "%_CFG_FILE_LOA%" (
-	set "_CFG_FILE_FOUND=1"
-	call :openzone_edit_ini "%_CFG_FILE_LOA%"
-
-	rem Overwrite the original config file (even if it was read-only)
-	attrib -R "%_CFG_FILE_LOA%"
-	move /Y "%_CFG_FILE_LOA%.tmp" "%_CFG_FILE_LOA%" > nul
+		rem Overwrite the config file (even if it was read-only)
+		attrib -R "!_CFG_FILE!"
+		move /Y "!_CFG_FILE!.tmp" "!_CFG_FILE!" > nul
+	)
 )
 
 setlocal DisableDelayedExpansion
@@ -563,6 +558,7 @@ if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 ) else (
 	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
+	if %_IS_CFA_ENABLED%==1 echo %cError%[-] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
 )
 
 goto end

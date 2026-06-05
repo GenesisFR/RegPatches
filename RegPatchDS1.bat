@@ -17,7 +17,7 @@ fsutil | find "dirty" > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 break > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
-dir /n > nul 2>&1
+dir /N > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
 dir /4 > nul 2>&1
 if not %ERRORLEVEL%==0 set "_LINUX=1"
@@ -28,11 +28,11 @@ if defined _LINUX goto parse_args
 
 :windows_version
 rem Store the Windows version
-for /f "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
+for /F "tokens=2 delims=[]" %%G in ('ver') do set "_WINVER=%%G"
 
 rem Merge the major and minor version (without the dot for numerical comparisons)
 rem major=%%G minor=%%H build=%%I
-for /f "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H" & set "_BUILD=%%I"
+for /F "tokens=2,3,4 delims=. " %%G in ('echo %_WINVER%') do set "_WINVER=%%G%%H" & set "_BUILD=%%I"
 
 rem 50 = Windows 2000
 rem 51 = Windows XP
@@ -54,7 +54,7 @@ if %_WINVER%==100 if %_BUILD% LSS 18363 goto parse_args
 :multi_color
 rem https://web.archive.org/web/20251127131301/https://www.dostips.com/forum/viewtopic.php?f=3&t=8044&p=53478#p53478
 rem Set up ANSI escape character for multi-color output on Windows 10 or later
-for /f %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
+for /F %%G in ('echo prompt $E ^| cmd') do set "ESC=%%G"
 set "cReset=%ESC%[0m"
 set "cTitle=%ESC%[96m"
 set "cMenu=%ESC%[93m"
@@ -79,7 +79,7 @@ if defined _LINUX if %_CHOICE% GTR 6 goto usage
 :admin_check
 call :display_header
 
-rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop
+rem Skip the admin check on Linux, otherwise we'll be stuck in an endless loop since there's no VBScript or UAC
 if defined _LINUX goto init
 
 rem https://ss64.com/vb/syntax-elevate.html
@@ -109,7 +109,7 @@ ping -n 2 127.0.0.1 > nul
 :init
 rem https://www.codeproject.com/Tips/119828/Running-a-bat-file-as-administrator-Correcting-cur
 rem Correct the current directory when a script is run as admin
-cd /d "%~dp0"
+cd /D "%~dp0"
 
 rem Shortcuts for registry stuff
 set "_MS_DS=HKLM\Software\Microsoft\Microsoft Games\DungeonSiege"
@@ -159,11 +159,11 @@ if exist DungeonSiege.exe (
 	ping -n 2 127.0.0.1 > nul
 	goto menu
 ) else (
-	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
+	echo %cError%[-] ERROR: DungeonSiege.exe and DSLOA.exe not found in the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 
 	rem Steam/GOG don't update the Wine registry when installing games so we skip the install detection
-	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset% & goto end
+	if defined _LINUX echo %cInfo%[i] Please place this script inside your Dungeon Siege installation directory.%cReset% & goto end
 )
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
@@ -172,7 +172,8 @@ if %ERRORLEVEL%==1 call :install_detection GOG "%_REG_KEY_GOG%" path
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
-	echo %cInfo%[i] Please place this script inside your Dungeon Siege game directory.%cReset%
+	ping -n 2 127.0.0.1 > nul
+	echo %cInfo%[i] Please place this script inside your Dungeon Siege installation directory.%cReset%
 	goto end
 )
 
@@ -285,8 +286,8 @@ echo %cInfo%[~] Removing registry entries for Dungeon Siege and Legends of Arann
 ping -n 2 127.0.0.1 > nul
 
 (
-	reg delete "%_MS_DS%" /f %_REG_ARG%
-	reg delete "%_MS_LOA%" /f %_REG_ARG%
+	reg delete "%_MS_DS%" /F %_REG_ARG%
+	reg delete "%_MS_LOA%" /F %_REG_ARG%
 ) > nul 2>&1
 
 if %ERRORLEVEL%==1 (
@@ -384,11 +385,11 @@ rem Whitelist the command prompt in Controlled Folder Access (otherwise the ATTR
 call :cfa_whitelist_cmd
 if %ERRORLEVEL%==1 goto end
 rem Restart the reg patch if necessary (using the same option)
-if %ERRORLEVEL%==2 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
+if %ERRORLEVEL%==2 call :end & cls & cmd /C "%~f0" -c %_CHOICE% & exit /B
 
 rem https://serverfault.com/a/701644
 rem Get the path to My Documents
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /v "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
+for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /V "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
 if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate the path to My Documents.%cReset% & goto end
 
@@ -437,7 +438,7 @@ if not exist empty (
 	call :cfa_whitelist_cmd
 	if !ERRORLEVEL!==1 goto end
 	rem Restart the reg patch if necessary (using the same option)
-	if !ERRORLEVEL!==2 call :end & cls & cmd /c "%~f0" -c %_CHOICE% & exit /B
+	if !ERRORLEVEL!==2 call :end & cls & cmd /C "%~f0" -c %_CHOICE% & exit /B
 	setlocal DisableDelayedExpansion
 )
 
@@ -461,7 +462,7 @@ echo %cInfo%[~] Comparing the local version against the version on GitHub...%cRe
 ping -n 2 127.0.0.1 > nul
 
 rem Store the file content into a variable
-for /f "usebackq" %%G in ("%_FILE%") do set _REPO_VERSION=%%G
+for /F "usebackq" %%G in ("%_FILE%") do set _REPO_VERSION=%%G
 del "%_FILE%"
 
 rem Compare version numbers (without dots)
@@ -507,7 +508,7 @@ rem ============================================================================
 
 :cfa_check
 rem Check in the registry if Controlled Folder Access is enabled
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /v "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
+for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /V "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
 if not defined _IS_CFA_ENABLED set "_IS_CFA_ENABLED=0" & exit /B
 
@@ -537,7 +538,7 @@ rem Or before Windows 10
 if %_WINVER% LSS 100 exit /B 0
 
 rem Check in the registry if the command prompt has already been whitelisted
-for /f "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /v "%_COMSPEC%" 2^>nul') do exit /B 0
+for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%\AllowedApplications" /V "%_COMSPEC%" 2^>nul') do exit /B 0
 
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & exit /B 1
@@ -604,7 +605,7 @@ exit /B
 echo %cInfo%[~] Adding registry entries for Dungeon Siege...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-reg add "%_MS_DS%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+reg add "%_MS_DS%\1.0" /V "EXE Path" /t REG_SZ /D "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /F %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
@@ -618,7 +619,7 @@ exit /B
 echo %cInfo%[~] Adding registry entries for Legends of Aranna...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-reg add "%_MS_LOA%\1.0" /v "EXE Path" /t REG_SZ /d "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /f %_REG_ARG% > nul
+reg add "%_MS_LOA%\1.0" /V "EXE Path" /t REG_SZ /D "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /F %_REG_ARG% > nul
 
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
@@ -634,9 +635,9 @@ echo:
 echo %cInfo%[~] Searching for the %1 installation directory...%cReset%
 ping -n 2 127.0.0.1 > nul
 
-for /f "tokens=2*" %%G in ('reg query %2 /v %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
+for /F "tokens=2*" %%G in ('reg query %2 /V %3 2^>nul') do set "_INSTALL_LOCATION=%%H"
 
-if not defined _INSTALL_LOCATION echo %cError%[-] %1 installation directory not found.%cReset% & exit /B 1
+if not defined _INSTALL_LOCATION echo %cError%[-] ERROR: %1 installation directory not found.%cReset% & exit /B 1
 
 echo %cSuccess%[+] %1 installation directory found: %_INSTALL_LOCATION%%cReset%
 echo:
@@ -676,15 +677,19 @@ set "_TARGET_SECTION=multiplayer"
 del /F "%_CFG_FILE_TEMP%" > nul 2>&1
 set "_IN_SECTION=0"
 
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-for-f-loop-reading-file-content-command-output
+rem We could have used the following to preserve empty lines but the Wine reimplementation of findstr is missing the /N switch
+rem for /F "eol=* tokens=1,* delims=:" %%K in ('findstr /N "^" "%_CFG_FILE%"') do (
+
 rem Read the config file line by line
-rem By default, "for /f" skips commented lines (starting with ';'), so we'd normally use "eol=" to preserve them, however it creates a weird syntax
+rem By default, "for /F" skips commented lines (starting with ';'), so we'd normally use "eol=" to preserve them, however it creates a weird syntax
 rem error on Linux, hence the '*' character that's usually unused
-for /f "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
+for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
 	set "_LINE=%%L"
 
 	rem Section detection logic
 	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /f "delims=[]" %%S in ("!_LINE!") do (
+		for /F "delims=[]" %%S in ("!_LINE!") do (
 			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
 		)
 	)

@@ -117,7 +117,6 @@ set "_MS_DS_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft G
 set "_MS_LOA=HKLM\Software\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna"
 set "_MS_LOA_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft Games\Dungeon Siege Legends of Aranna\1.0"
 set "_REG_ARG=/reg:32"
-set "_REG_FILE=%~n0.reg"
 set "_REG_KEY_CFA=HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access"
 set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1185868626"
 set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
@@ -126,6 +125,7 @@ set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Ste
 rem Other important variables
 set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
+set "_REG_FILE=%~n0.reg"
 
 rem https://ss64.com/nt/syntax-64bit.html
 rem Check if we're on a 32-bit system
@@ -674,11 +674,10 @@ set "_IN_SECTION=0"
 del /F "%_CFG_FILE_TEMP%" > nul 2>&1
 
 rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-for-f-loop-reading-file-content-command-output#problem-the-loop-skips-empty-lines
-rem We use findstr to preserve empty lines
+rem We use findstr to preserve empty lines. "eol=" creates a weird syntax error on Linux, hence the '*' character that's usually unused
 if not defined _LINUX (
-	for /F "eol= tokens=1,* delims=:" %%K in ('findstr /N "^" "%_CFG_FILE%"') do call :openzone_edit_ini_parse_line "%%L"
-rem The Wine reimplementation of findstr is missing the /N switch, so we have to use another way. "eol=" creates a weird syntax error on Linux,
-rem hence the '*' character that's usually unused
+	for /F "eol=* tokens=1,* delims=:" %%K in ('findstr /N "^" "%_CFG_FILE%"') do call :openzone_edit_ini_parse_line "%%L"
+rem The Wine reimplementation of findstr is missing the /N switch, so we have to use another way. 
 ) else (
 	for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do call :openzone_edit_ini_parse_line "%%L"
 )

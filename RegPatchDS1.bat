@@ -71,10 +71,10 @@ if /I not "%~1"=="-c" goto usage
 rem Convert empty arguments or strings to 0
 set /A "_CHOICE=%~2 + 0"
 
-rem It must be a digit between 1 and 10 (6 on Linux) to match the choices below
+rem It must be a digit that matches the choices in the selection menu (except Exit)
 if %_CHOICE% LSS 1 goto usage
 if %_CHOICE% GTR 10 goto usage
-if defined _LINUX if %_CHOICE% GTR 6 goto usage
+if defined _LINUX if %_CHOICE% GTR 7 goto usage
 
 :admin_check
 call :display_header
@@ -214,7 +214,10 @@ if not defined _LINUX (
 	echo %cError%[a] Exit%cReset%
 ) else (
 	echo:
-	echo %cError%[7] Exit%cReset%
+	echo %cTitle%[ OTHER ]%cReset%
+	echo %cMenu%[7]%cReset% Check for updates
+	echo:
+	echo %cError%[8] Exit%cReset%
 )
 
 echo:
@@ -223,7 +226,7 @@ echo %cDim%---------------------------------------------------------------------
 
 rem List of valid choices
 set "_CHOICES=1234567890a"
-if defined _LINUX set "_CHOICES=1234567"
+if defined _LINUX set "_CHOICES=12345678"
 
 echo %cTitle%Please make a selection [1-%_CHOICES:~-1%]:%cReset%
 choice /C:%_CHOICES% /N > nul 2>&1
@@ -248,7 +251,10 @@ if %_CHOICE%==5 goto export
 if %_CHOICE%==6 goto openzone
 
 rem Don't handle Windows-specific options on Linux
-if defined _LINUX exit /B
+if defined _LINUX (
+	if %_CHOICE%==7 goto update
+	if %_CHOICE%==8 exit /B
+)
 
 if %_CHOICE%==7 goto junction
 if %_CHOICE%==8 goto cfa_whitelist_all
@@ -573,7 +579,7 @@ if %ERRORLEVEL%==1 echo %cError%[-] ERROR: no internet connection detected.%cRes
 
 rem Requires https://curl.se/windows (installed by default starting from Windows 10)
 echo %cInfo%[i] Downloading using curl...%cReset%
-curl --connect-timeout 3 -o "%2" "%1" > nul 2>&1
+curl --connect-timeout 5 --max-time 10 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to powershell (installed by default starting from Windows 7)
 if not exist "%2" (
@@ -739,7 +745,7 @@ rem Display usage information
 call :display_header
 
 set "_LAST_OPTION_ID=10"
-if defined _LINUX set "_LAST_OPTION_ID=6"
+if defined _LINUX set "_LAST_OPTION_ID=7"
 
 echo %cInfo%Usage:%cReset%
 echo:

@@ -672,46 +672,28 @@ rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-how-
 rem Store the beginning of the config file to a temp file
 set "_CFG_FILE=%~1"
 set "_CFG_FILE_TEMP=%~1.tmp"
-set "_TARGET_SECTION=multiplayer"
-
-del /F "%_CFG_FILE_TEMP%" > nul 2>&1
 set "_IN_SECTION=0"
 
-rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-for-f-loop-reading-file-content-command-output
-rem We could have used the following to preserve empty lines but the Wine reimplementation of findstr is missing the /N switch
-rem for /F "eol=* tokens=1,* delims=:" %%K in ('findstr /N "^" "%_CFG_FILE%"') do (
+del /F "%_CFG_FILE_TEMP%" > nul 2>&1
 
-rem Read the config file line by line
-rem By default, "for /F" skips commented lines (starting with ';'), so we'd normally use "eol=" to preserve them, however it creates a weird syntax
-rem error on Linux, hence the '*' character that's usually unused
-for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do (
-	set "_LINE=%%L"
-
-	rem Section detection logic
-	if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
-		for /F "delims=[]" %%S in ("!_LINE!") do (
-			if /I "%%S"=="%_TARGET_SECTION%" (set "_IN_SECTION=1")
-		)
-	)
-
-	rem Write the current line to the temp file until we reach the MP section
-	if !_IN_SECTION!==0 (
-		if not "!_LINE!"=="" (echo !_LINE!>> "%_CFG_FILE_TEMP%")
-	) else (
-		call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
-		exit /B
-	)
+rem https://tutorialreference.com/batch-scripting/examples/faq/batch-script-for-f-loop-reading-file-content-command-output#problem-the-loop-skips-empty-lines
+rem We use findstr to preserve empty lines
+if not defined _LINUX (
+	for /F "eol= tokens=1,* delims=:" %%K in ('findstr /N "^" "%_CFG_FILE%"') do call :openzone_edit_ini_parse_line "%%L"
+rem The Wine reimplementation of findstr is missing the /N switch, so we have to use another way. "eol=" creates a weird syntax error on Linux,
+rem hence the '*' character that's usually unused
+) else (
+	for /F "usebackq eol=* delims=" %%L in ("%_CFG_FILE%") do call :openzone_edit_ini_parse_line "%%L"
 )
 
-rem No MP section was found
-if !_IN_SECTION!==0 call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
+rem We're done parsing the file, append the MP section
+call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
 
 exit /B
 
 :openzone_edit_ini_append_mp_section [file]
 rem Append the MP section to the file specified
 (
-	echo:
 	echo [multiplayer]
 	echo gun_server = gz.exsurge.net
 	echo gun_server_port = 2300
@@ -723,6 +705,22 @@ rem Append the MP section to the file specified
 	echo:
 	echo [debug]
 ) >> "%~1"
+
+exit /B
+
+:openzone_edit_ini_parse_line [line]
+rem Read the config file, line by line
+set "_LINE=%~1"
+
+rem Parse until we reach the multiplayer section
+if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
+	for /F "delims=[]" %%S in ("!_LINE!") do (
+		if /I "%%S"=="multiplayer" set "_IN_SECTION=1"
+	)
+)
+
+rem Write the current line to the temp file until we reach the MP section
+if !_IN_SECTION!==0 echo:!_LINE!>> "%_CFG_FILE_TEMP%"
 
 exit /B
 

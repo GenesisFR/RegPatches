@@ -65,6 +65,9 @@ set "cDim=%ESC%[90m"
 
 :parse_args
 rem Check and validate arguments
+set "_LAST_OPTION_INDEX=10"
+if defined _LINUX set "_LAST_OPTION_INDEX=7"
+
 if "%~1"=="" goto admin_check
 if /I not "%~1"=="-c" goto usage
 
@@ -73,8 +76,7 @@ set /A "_CHOICE=%~2 + 0"
 
 rem It must be a digit that matches the choices in the selection menu (except Exit)
 if %_CHOICE% LSS 1 goto usage
-if %_CHOICE% GTR 10 goto usage
-if defined _LINUX if %_CHOICE% GTR 7 goto usage
+if %_CHOICE% GTR %_LAST_OPTION_INDEX% goto usage
 
 :admin_check
 call :display_header
@@ -734,12 +736,9 @@ exit /B
 rem Display usage information
 call :display_header
 
-set "_LAST_OPTION_ID=10"
-if defined _LINUX set "_LAST_OPTION_ID=7"
-
 echo %cInfo%Usage:%cReset%
 echo:
-echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_ID%^)%cReset%
+echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_INDEX%^)%cReset%
 goto end
 
 :end

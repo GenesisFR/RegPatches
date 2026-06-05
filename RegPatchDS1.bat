@@ -45,7 +45,7 @@ rem 1001xxxx = Windows 10 / Windows Server 2016/2019/2022
 rem 1002xxxx = Windows 11
 
 rem The script won't work properly before Windows 2000
-if %_WINVER% LSS 50 echo [-] ERROR: Only Windows 2000 or later is supported! & goto end
+if %_WINVER% LSS 50 echo [-] ERROR: only Windows 2000 or later is supported! & goto end
 
 rem Don't enable multi-color output on unsupported systems (before Windows 10 1909)
 if %_WINVER% LSS 100 goto parse_args
@@ -173,7 +173,7 @@ if %ERRORLEVEL%==1 call :install_detection GOG "%_REG_KEY_GOG%" path
 if %ERRORLEVEL%==1 (
 	echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[i] Please place this script inside your Dungeon Siege installation directory.%cReset%
+	echo %cMenu%[i] Please place this script inside your Dungeon Siege installation directory.%cReset%
 	goto end
 )
 
@@ -232,7 +232,7 @@ echo %cTitle%Please make a selection [1-%_CHOICES:~-1%]:%cReset%
 choice /C:%_CHOICES% /N > nul 2>&1
 
 rem choice is missing
-if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: Make sure you have the choice command installed.%cReset% & goto end
+if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: make sure you have the choice command installed.%cReset% & goto end
 
 set "_CHOICE=%ERRORLEVEL%"
 
@@ -263,7 +263,7 @@ if %_CHOICE%==10 goto update
 if %_CHOICE%==11 exit /B
 
 rem This is only here to help with development since we should never reach this in practice
-echo %cError%[-] Invalid choice detected.%cReset% & goto end
+echo %cError%[-] ERROR: invalid choice detected.%cReset% & goto end
 
 rem ===============================================================================================
 rem ======================================== CHOICE LABELS ========================================
@@ -296,12 +296,9 @@ ping -n 2 127.0.0.1 > nul
 	reg delete "%_MS_LOA%" /F %_REG_ARG%
 ) > nul 2>&1
 
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to remove registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
-)
+if %ERRORLEVEL%==1 echo %cError%[-] ERROR: failed to remove registry entries.%cReset% & goto end
 
+echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
 goto end
 
 :export
@@ -346,7 +343,7 @@ if exist gmax.exe (
 ) else (
 	echo %cError%[-] ERROR: gmax.exe not found in the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
+	echo %cMenu%[i] Make sure to run the reg patch from your Gmax installation directory.%cReset%
 )
 
 goto end
@@ -378,7 +375,7 @@ if %ERRORLEVEL%==0 (
 	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
 	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
 ) else (
-	echo %cError%[-] Failed to create directory junction.%cReset%
+	echo %cError%[-] ERROR: failed to create the directory junction.%cReset%
 )
 
 goto end
@@ -397,7 +394,7 @@ rem https://serverfault.com/a/701644
 rem Get the path to My Documents
 for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /V "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
-if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate the path to My Documents.%cReset% & goto end
+if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate My Documents.%cReset% & goto end
 
 set "_CFG_FILE_DS=%_MY_DOCUMENTS%\Dungeon Siege\DungeonSiege.ini"
 set "_CFG_FILE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\DungeonSiege.ini"
@@ -423,8 +420,8 @@ setlocal DisableDelayedExpansion
 if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 ) else (
-	echo %cError%[-] No config file found! Make sure to run the game at least once to generate it.%cReset%
-	if %_IS_CFA_ENABLED%==1 echo %cError%[-] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
+	echo %cError%[-] ERROR: no config file found! Make sure to run the game at least once to generate it.%cReset%
+	if %_IS_CFA_ENABLED%==1 echo %cMenu%[i] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
 )
 
 goto end
@@ -436,7 +433,7 @@ rem Create an empty file to check if we have write permissions in the current di
 copy nul empty > nul 2>&1
 
 if not exist empty (
-	echo %cError%[-] ERROR: The Windows Command Prompt cannot write to the current directory.%cReset%
+	echo %cError%[-] ERROR: the Windows Command Prompt cannot write to the current directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 
 	setlocal EnableDelayedExpansion
@@ -480,7 +477,7 @@ echo %cTitle%Would you like to update? [Y,N]%cReset%
 choice /N > nul 2>&1
 
 rem choice is missing
-if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: Make sure you have the choice command installed.%cReset%
+if %ERRORLEVEL%==9009 echo %cError%[-] ERROR: make sure you have the choice command installed.%cReset%
 
 if not %ERRORLEVEL%==1 goto end
 
@@ -578,20 +575,20 @@ ping google.com -n 1 -w 1000 > nul
 if %ERRORLEVEL%==1 echo %cError%[-] ERROR: no internet connection detected.%cReset% & exit /B 404
 
 rem Requires https://curl.se/windows (installed by default starting from Windows 10)
-echo %cInfo%[i] Downloading using curl...%cReset%
+echo %cInfo%[~] Downloading using curl...%cReset%
 curl --connect-timeout 5 --max-time 10 -o "%2" "%1" > nul 2>&1
 
 rem Fall back to powershell (installed by default starting from Windows 7)
 if not exist "%2" (
 	if defined _PWSH_CMD (
-		echo %cInfo%[i] Falling back to Powershell...%cReset%
+		echo %cInfo%[~] Falling back to Powershell...%cReset%
 		%_PWSH_CMD% -Command "(New-Object System.Net.WebClient).DownloadFile('%1', '%2')" > nul 2>&1
 	)
 )
 
 rem Fall back to bitsadmin (may not work on Vista, won't work on older systems)
 if not exist "%2" (
-	echo %cInfo%[i] Falling back to bitsadmin...%cReset%
+	echo %cInfo%[~] Falling back to bitsadmin...%cReset%
 	bitsadmin /transfer %~f0 /download /priority foreground "%1" "%2" > nul 2>&1
 )
 
@@ -600,7 +597,7 @@ rem We could also try with VBScript as a last resort but this is overkill at thi
 if not exist "%2" (
 	echo %cError%[-] ERROR: download failed.%cReset%
 	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
+	echo %cMenu%[i] Make sure you have cURL or Powershell 2.0+ installed.%cReset%
 	exit /B 1
 )
 
@@ -613,12 +610,9 @@ ping -n 2 127.0.0.1 > nul
 
 reg add "%_MS_DS%\1.0" /V "EXE Path" /t REG_SZ /D "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /F %_REG_ARG% > nul
 
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
+if %ERRORLEVEL%==1 echo %cError%[-] ERROR: failed to add registry entries.%cReset% & exit /B
 
+echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 exit /B
 
 :ds1loa
@@ -627,12 +621,9 @@ ping -n 2 127.0.0.1 > nul
 
 reg add "%_MS_LOA%\1.0" /V "EXE Path" /t REG_SZ /D "%_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH%" /F %_REG_ARG% > nul
 
-if %ERRORLEVEL%==1 (
-	echo %cError%[-] ERROR: failed to add registry entries.%cReset%
-) else (
-	echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
-)
+if %ERRORLEVEL%==1 echo %cError%[-] ERROR: failed to add registry entries.%cReset% & exit /B
 
+echo %cSuccess%[+] SUCCESS: registry entries updated.%cReset%
 exit /B
 
 :install_detection [platform] [reg_key] [reg_value]
@@ -662,7 +653,7 @@ if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
 	ping -n 2 127.0.0.1 > nul
 	exit /B
 ) else (
-	echo %cError%[-] DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
+	echo %cError%[-] ERROR: DungeonSiege.exe and DSLOA.exe not found in the %1 installation directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 	exit /B 1
 )

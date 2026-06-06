@@ -31,7 +31,7 @@ A collection of registry patches to allow launchers, tools and addons to locate 
 **Optional**
 
 - `bitsadmin` for downloading files, as a fallback (included since Windows Vista)
-- [curl](https://curl.se/windows) for downloading files (included since Windows 10 1909)
+- [curl](https://curl.se/windows) for downloading files (included since Windows 10 1803)
 - `mklink` for making directory junctions (included since Windows Vista)
 - **Powershell 2.0+** for downloading files, as a fallback (included since Windows 7)
 
@@ -52,4 +52,4 @@ They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, whic
 - `curl` v7.80 can be obtained from the [Wayback Machine](https://web.archive.org/web/20211208160135/https://curl.se/windows).
 - `mklink` doesn't exist, therefore [junction](https://learn.microsoft.com/en-us/sysinternals/downloads/junction) (a tool from Sysinternals) is used instead.
 
-Download and place them next to the script (for `curl`, `curl-ca-bundle.crt` must be present as well).
+They're also available from the [XP](https://github.com/GenesisFR/RegPatches/tree/master/XP) folder, for your convenience. Download and place them next to the script (for `curl`, `curl-ca-bundle.crt` must be present as well).

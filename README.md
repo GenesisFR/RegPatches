@@ -2,13 +2,13 @@
 
 A collection of registry patches to allow launchers, tools and addons to locate the installation path of a game.
 
-# Supported games
+## Supported games
 
 - Beyond Good and Evil
 - Dungeon Siege 1 (with Legends of Aranna)
 - Dungeon Siege 2 (with Broken World)
 
-# Supported operating systems
+## Supported operating systems
 
 - Linux* (via Proton/Wine)
 - Windows 2000**/ XP** / Server 2003**
@@ -22,28 +22,28 @@ A collection of registry patches to allow launchers, tools and addons to locate 
 \* Requires `curl` to allow all features to work.  
 \** Requires `choice`, `curl` and `junction` to allow all features to work.
 
-# Requirements
+## Requirements
 
-**Mandatory**
+### Mandatory
 
 - `choice` for user input (included since Windows Vista and in Wine)
 
-**Optional**
+### Optional
 
 - `bitsadmin` for downloading files, as a fallback (included since Windows Vista)
 - [curl](https://curl.se/windows) for downloading files (included since Windows 10 1803)
 - `mklink` for making directory junctions (included since Windows Vista)
 - **Powershell 2.0+** for downloading files, as a fallback (included since Windows 7)
 
-# Issues fixed
+## Issues fixed
 
-## A PRM.PRM file is required for this application
+### A PRM.PRM file is required for this application
 
 <img width="578" height="157" alt="geomatica error" src="https://github.com/user-attachments/assets/5f0ba2be-73d4-4a58-81bd-379c4837fec8" />
 
 If you get this error after making a choice in the selection menu, uninstall Geomatica as it seems to interfere with batch files.
 
-## The scripts don't work on Windows 2000/XP/Server 2003
+### The scripts don't work on Windows 2000/XP/Server 2003
 
 They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on these versions of Windows:
 

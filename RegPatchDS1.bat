@@ -2,7 +2,7 @@
 setlocal
 
 rem You can find the latest version or report issues at https://github.com/GenesisFR/RegPatches.
-set "_VERSION=1.60"
+set "_VERSION=1.61"
 title Reg Patcher for Dungeon Siege 1 by Genesis (v%_VERSION%)
 echo:
 

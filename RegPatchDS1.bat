@@ -125,11 +125,9 @@ set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell F
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
 rem Other important variables
-set "_COMSPEC=%CMDCMDLINE%"
+set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 set "_REG_FILE=%~n0.reg"
-rem %CMDCMDLINE% doesn't exist in Wine
-if defined _LINUX set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
 
 rem https://ss64.com/nt/syntax-64bit.html
 rem Check if we're on a 32-bit system

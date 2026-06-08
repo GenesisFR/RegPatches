@@ -372,7 +372,7 @@ if %_WINVER% GTR 52 (
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
 rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
 ) else (
-	if not exist junction echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+	if not exist junction.exe echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
 
 	rem Remove the directory junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul 2>&1
@@ -416,7 +416,7 @@ set "_SAVE_DS=%_MY_DOCUMENTS%\Dungeon Siege\Save"
 set "_SAVE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\Save"
 
 if not exist "%_SAVE_DS%" md "%_SAVE_DS%"
-if not exist "%_DOCS_LOA%" echo %cError%[-] ERROR: "%_DOCS_LOA%" not found. Make sure to run Legends of Aranna at least once to generate it! %cReset% & goto end
+if not exist "%_DOCS_LOA%" md "%_DOCS_LOA%"
 
 rem Windows Vista or later
 if %_WINVER% GTR 52 (
@@ -434,7 +434,7 @@ if %_WINVER% GTR 52 (
 	mklink /J "%_SAVE_LOA%" "%_SAVE_DS%" > nul 2>&1
 rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
 ) else (
-	if not exist junction echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+	if not exist junction.exe echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
 
 	rem Remove the directory junction
 	junction -d "%_SAVE_LOA%" > nul 2>&1
@@ -460,8 +460,11 @@ echo %cInfo%[i] You'll have to either rename DSLOA.exe to DungeonSiege.exe in yo
 ping -n 2 127.0.0.1 > nul
 
 rem Copy the launch option to clipboard
-echo %_STEAM_LAUNCH_OPTION%| clip > nul 2>&1
-if not %ERRORLEVEL%==9009 echo %cInfo%[i] The launch options have been copied to your clipboard.%cReset%
+clip > nul 2>&1
+if not %ERRORLEVEL%==9009 (
+	echo %_STEAM_LAUNCH_OPTION%| clip > nul 2>&1
+	echo %cInfo%[i] The launch options have been copied to your clipboard.%cReset%
+)
 
 echo:
 echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will also move the entire Save directory for Legends of Aranna! %cReset%

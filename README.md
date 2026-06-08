@@ -31,7 +31,8 @@ A collection of registry patches to allow launchers, tools and addons to locate 
 ### Optional
 
 - `bitsadmin` for downloading files, as a fallback (included since Windows Vista)
-- [curl](https://curl.se/windows) for downloading files (included since Windows 10 1803)
+- `clip` for copying Steam launch options to clipboard (included since Windows Vista)
+- [`curl`](https://curl.se/windows) for downloading files (included since Windows 10 1803)
 - `mklink` for making directory junctions (included since Windows Vista)
 - **Powershell 2.0+** for downloading files, as a fallback (included since Windows 7)
 
@@ -45,10 +46,11 @@ If you get this error after making a choice in the selection menu, uninstall Geo
 
 ### The scripts don't work on Windows 2000/XP/Server 2003
 
-They rely on some commands like `bitsadmin`, `choice`, `curl` and `mklink`, which are not available by default on these versions of Windows:
+They rely on some commands like `bitsadmin`, `choice`, `clip`, `curl` and `mklink`, which are not available by default on these versions of Windows:
 
 - `bitsadmin` can be obtained by installing the [Support Tools for Windows XP](https://www.majorgeeks.com/files/details/microsoft_windows_xp_service_pack_2_support_tools.html), however I couldn't get the command to work (probably due to an outdated/unsupported protocol), so you should install `curl` instead (see below).
 - `choice` can be obtained from [here](https://www.allbootdisks.com/disk_contents/dos.html) (under `MS-DOS 6.21`). If you don't trust downloading programs from unofficial sources, you can also run the reg patch with the `-c #` (where `#` is a number) command-line argument, which will bypass the selection menu and execute the corresponding option.
+- `clip` can be obtained from [here](https://archive.org/download/mswin98rskt/mswin98rskt.iso/FILE%2FCLIP.EXE)
 - `curl` v7.80 can be obtained from the [Wayback Machine](https://web.archive.org/web/20211208160135/https://curl.se/windows).
 - `mklink` doesn't exist, therefore [junction](https://learn.microsoft.com/en-us/sysinternals/downloads/junction) (a tool from Sysinternals) is used instead.
 

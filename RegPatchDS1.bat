@@ -65,7 +65,7 @@ set "cDim=%ESC%[90m"
 
 :parse_args
 rem Check and validate arguments
-set "_LAST_OPTION_INDEX=10"
+set "_LAST_OPTION_INDEX=11"
 if defined _LINUX set "_LAST_OPTION_INDEX=7"
 
 if "%~1"=="" goto admin_check
@@ -99,7 +99,7 @@ if not %ERRORLEVEL%==0 (
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
 
 	"%TEMP%\ElevateMe.vbs"
-	del "%TEMP%\ElevateMe.vbs"
+	del "%TEMP%\ElevateMe.vbs" > nul 2>&1
 
 	exit /B
 )
@@ -125,7 +125,7 @@ set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell F
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39190"
 
 rem Other important variables
-set "_COMSPEC=%SystemRoot%\system32\cmd.exe"
+set "_COMSPEC=%SystemRoot%\System32\cmd.exe"
 set "_PROGRAM_FILES=%ProgramFiles(x86)%"
 set "_REG_FILE=%~n0.reg"
 
@@ -142,6 +142,10 @@ if %PROCESSOR_ARCHITECTURE%==x86 (
 		set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1185868626"
 	)
 )
+
+rem https://serverfault.com/a/701644
+rem Get the path to My Documents
+for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /V "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
 :exe_check
 echo %cInfo%[~] Current directory:%cReset% %CD%
@@ -170,9 +174,10 @@ if exist DungeonSiege.exe (
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
 call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
-if %ERRORLEVEL%==1 call :install_detection GOG "%_REG_KEY_GOG%" path
+if %ERRORLEVEL%==1 ping -n 2 127.0.0.1 > nul & call :install_detection GOG "%_REG_KEY_GOG%" path
 
 if %ERRORLEVEL%==1 (
+	ping -n 2 127.0.0.1 > nul
 	echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 	echo %cMenu%[i] Please place this script inside your Dungeon Siege installation directory.%cReset%
@@ -180,8 +185,8 @@ if %ERRORLEVEL%==1 (
 )
 
 :menu
-rem Double the trailing backslash of the installation directory as it's interpreted as an escape character by the REG commands, which causes them
-rem to not work correctly when the game is installed at the root of a drive
+rem Double the trailing backslash of the installation directory as it's interpreted as an escape character by the REG commands, which causes them to not work
+rem correctly when the game is installed at the root of a drive
 set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
 if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
 
@@ -205,15 +210,16 @@ echo %cMenu%[6]%cReset% Redirect ZoneMatch to OpenZone (needed to play online th
 rem Hide Windows-specific options on Linux
 if not defined _LINUX (
 	echo %cMenu%[7]%cReset% Create a directory junction in Program Files ^(useful for GameRanger^)
-	echo %cMenu%[8]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
+	echo %cMenu%[8]%cReset% Enable Steam Cloud for Legends of Aranna
+	echo %cMenu%[9]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
 	echo:
 	echo %cTitle%[ MODDING ]%cReset%
-	echo %cMenu%[9]%cReset% Add the environment variable for Gmax ^(useful when installing SiegeMax^)
+	echo %cMenu%[10]%cReset% Add the environment variable for Gmax ^(useful when installing SiegeMax^)
 	echo:
 	echo %cTitle%[ OTHER ]%cReset%
-	echo %cMenu%[0]%cReset% Check for updates
+	echo %cMenu%[a]%cReset% Check for updates
 	echo:
-	echo %cError%[a] Exit%cReset%
+	echo %cError%[b] Exit%cReset%
 ) else (
 	echo:
 	echo %cTitle%[ OTHER ]%cReset%
@@ -227,7 +233,7 @@ echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 
 rem List of valid choices
-set "_CHOICES=1234567890a"
+set "_CHOICES=1234567890ab"
 if defined _LINUX set "_CHOICES=12345678"
 
 echo %cTitle%Please make a selection [1-%_CHOICES:~-1%]:%cReset%
@@ -258,11 +264,12 @@ if defined _LINUX (
 	if %_CHOICE%==8 exit /B
 )
 
-if %_CHOICE%==7 goto junction
-if %_CHOICE%==8 goto cfa_whitelist_all
-if %_CHOICE%==9 goto gmax
-if %_CHOICE%==10 goto update
-if %_CHOICE%==11 exit /B
+if %_CHOICE%==7 goto junction_game
+if %_CHOICE%==8 goto junction_save
+if %_CHOICE%==9 goto cfa_whitelist_all
+if %_CHOICE%==10 goto gmax
+if %_CHOICE%==11 goto update
+if %_CHOICE%==12 exit /B
 
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] ERROR: invalid choice detected.%cReset% & goto end
@@ -272,6 +279,10 @@ rem ======================================== CHOICE LABELS =====================
 rem ===============================================================================================
 
 :cfa_whitelist_all
+echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
+
 if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer.%cReset% & goto end
 
 call :cfa_check
@@ -279,10 +290,6 @@ if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled.%cR
 
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
-
-echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
-echo %cDim%--------------------------------------------------------------------------------%cReset%
-ping -n 2 127.0.0.1 > nul
 
 for %%G in (DSLOA.exe,DSLOAMod.exe,DSMod.exe,DSVideoConfig.exe,DungeonSiege.exe) do call :cfa_whitelist %%G
 
@@ -302,16 +309,15 @@ ping -n 2 127.0.0.1 > nul
 if %ERRORLEVEL%==1 echo %cError%[-] ERROR: failed to remove registry entries.%cReset% & goto end
 
 echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
-
 goto end
 
 :export
+echo %cInfo%[~] Exporting registry entries for Dungeon Siege and Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
 set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
-
-echo %cInfo%[~] Exporting registry entries for Dungeon Siege and Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
 
 (
 	echo REGEDIT4
@@ -350,33 +356,115 @@ echo %cSuccess%[+] Gmax environment variable successfully added.%cReset%
 
 goto end
 
-:junction
+:junction_game
+echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
+ping -n 2 127.0.0.1 > nul
+
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
 rem for %%G in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxG"
 
-echo %cInfo%[~] Creating a directory junction for Dungeon Siege...%cReset%
-ping -n 2 127.0.0.1 > nul
-
 rem Windows Vista or later
 if %_WINVER% GTR 52 (
-	if exist "%_PROGRAM_FILES%\Dungeon Siege 1" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul
+	rem Remove the directory junction
+	rd /Q "%_PROGRAM_FILES%\Dungeon Siege 1" > nul 2>&1
+
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
-rem Windows 2000/XP/Server 2003
+rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
 ) else (
-	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
+	if not exist junction echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+
+	rem Remove the directory junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 1" > nul 2>&1
+
 	junction "%_PROGRAM_FILES%\Dungeon Siege 1" "%_INSTALL_LOCATION%" > nul 2>&1
 )
 
 if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
 
 echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-echo:
 ping -n 2 127.0.0.1 > nul
 echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 1" to add the game to GameRanger.%cReset%
 echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
-echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
+echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will also move your entire game directory! %cReset%
+
+goto end
+
+:junction_save
+echo %cInfo%[i] This will redirect the Save directory for Legends of Aranna to the one used by Dungeon Siege.
+echo If you had saves for Legends of Aranna, you'll have to copy them manually.%cReset%
+echo %cMenu%[!] WARNING: this is an experimental feature. All saves will be displayed in-game and those not created by Dungeon Siege can't be loaded in Legends of Aranna (and vice versa)! %cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+pause
+echo:
+
+echo %cInfo%[~] Enabling Steam Cloud for Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Whitelist the command prompt in Controlled Folder Access (otherwise the MKLINK and JUNCTION commands won't work)
+call :cfa_whitelist_cmd
+if %ERRORLEVEL%==1 goto end
+rem Restart the reg patch if necessary (using the same option)
+if %ERRORLEVEL%==2 call :end & cls & cmd /C "%~f0" -c %_CHOICE% & exit /B
+
+if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate My Documents.%cReset% & goto end
+
+set "_DOCS_DS=%_MY_DOCUMENTS%\Dungeon Siege"
+set "_DOCS_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA"
+set "_SAVE_DS=%_MY_DOCUMENTS%\Dungeon Siege\Save"
+set "_SAVE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\Save"
+
+if not exist "%_SAVE_DS%" md "%_SAVE_DS%"
+if not exist "%_DOCS_LOA%" echo %cError%[-] ERROR: "%_DOCS_LOA%" not found. Make sure to run Legends of Aranna at least once to generate it! %cReset% & goto end
+
+rem Windows Vista or later
+if %_WINVER% GTR 52 (
+	rem Remove the directory junction
+	rd /Q "%_SAVE_LOA%" > nul 2>&1
+
+	rem Failed to remove the directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_LOA%" (
+		ren "%_SAVE_LOA%" Save_backup
+		echo %cInfo%[i] The directory "%_SAVE_LOA%" was renamed as "%_SAVE_LOA%_backup". Don't forget to move your saves to "%_SAVE_DS%"! %cReset%
+		echo:
+		explorer "%_DOCS_LOA%\Save_backup"
+	)
+
+	mklink /J "%_SAVE_LOA%" "%_SAVE_DS%" > nul 2>&1
+rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
+) else (
+	if not exist junction echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+
+	rem Remove the directory junction
+	junction -d "%_SAVE_LOA%" > nul 2>&1
+
+	rem Failed to remove the directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_LOA%" (
+		ren "%_SAVE_LOA%" Save_backup
+		echo %cInfo%[i] The directory "%_SAVE_LOA%" was renamed as "%_SAVE_LOA%_backup". Don't forget to move your saves to "%_SAVE_DS%"! %cReset%
+		echo:
+		explorer "%_DOCS_LOA%\Save_backup"
+	)
+
+	junction "%_SAVE_LOA%" "%_SAVE_DS%" > nul 2>&1
+)
+
+if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
+
+set _STEAM_LAUNCH_OPTION="%_INSTALL_LOCATION%\DSLOA.exe" %%command%%
+
+echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+ping -n 2 127.0.0.1 > nul
+echo %cInfo%[i] You'll have to either rename DSLOA.exe to DungeonSiege.exe in your installation directory or put the following in your Steam launch options: %cMenu%%_STEAM_LAUNCH_OPTION%%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem Copy the launch option to clipboard
+echo %_STEAM_LAUNCH_OPTION%| clip > nul 2>&1
+if not %ERRORLEVEL%==9009 echo %cInfo%[i] The launch options have been copied to your clipboard.%cReset%
+
+echo:
+echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will also move the entire Save directory for Legends of Aranna! %cReset%
 
 goto end
 
@@ -389,10 +477,6 @@ call :cfa_whitelist_cmd
 if %ERRORLEVEL%==1 goto end
 rem Restart the reg patch if necessary (using the same option)
 if %ERRORLEVEL%==2 call :end & cls & cmd /C "%~f0" -c %_CHOICE% & exit /B
-
-rem https://serverfault.com/a/701644
-rem Get the path to My Documents
-for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /V "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
 if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate My Documents.%cReset% & goto end
 
@@ -420,7 +504,7 @@ setlocal DisableDelayedExpansion
 if defined _CFG_FILE_FOUND (
 	echo %cSuccess%[+] SUCCESS: ZoneMatch server redirected to OpenZone.%cReset%
 ) else (
-	echo %cError%[-] ERROR: no config file found! Make sure to run the game at least once to generate it.%cReset%
+	echo %cError%[-] ERROR: no config file found. Make sure to run the game at least once to generate it! %cReset%
 	if %_IS_CFA_ENABLED%==1 echo %cMenu%[i] The game executable should be whitelisted in Controlled Folder Access beforehand.%cReset%
 )
 
@@ -445,7 +529,7 @@ if not exist empty (
 	setlocal DisableDelayedExpansion
 )
 
-del empty
+del empty > nul 2>&1
 echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -466,7 +550,7 @@ ping -n 2 127.0.0.1 > nul
 
 rem Store the file content into a variable
 for /F "usebackq" %%G in ("%_FILE%") do set _REPO_VERSION=%%G
-del "%_FILE%"
+del "%_FILE%" > nul 2>&1
 
 rem Compare version numbers (without dots)
 if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the latest version.%cReset% & goto end
@@ -510,17 +594,16 @@ rem ========================================= SUBROUTINES ======================
 rem ===============================================================================================
 
 :cfa_check
+rem Avoids a problem on Linux since error messages are sent to STDOUT (1) instead of STDERR (2)
+if defined _LINUX set "_IS_CFA_ENABLED=0" & exit /B
+
 rem Check in the registry if Controlled Folder Access is enabled
 for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /V "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
 if not defined _IS_CFA_ENABLED set "_IS_CFA_ENABLED=0" & exit /B
 
-rem Avoids a problem on Linux since error messages are sent to STDOUT (1) instead of STDERR (2)
-if defined _LINUX set "_IS_CFA_ENABLED=0" & exit /B
-
 rem The value in the registry is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
-
 exit /B
 
 :cfa_whitelist [exe]
@@ -660,6 +743,8 @@ if exist "%_INSTALL_LOCATION%\DungeonSiege.exe" (
 
 :open_repo
 echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
 pause
 start "" https://github.com/GenesisFR/RegPatches
 exit /B
@@ -684,7 +769,6 @@ rem The Wine reimplementation of findstr is missing the /N switch, so we have to
 
 rem We're done parsing the file, append the MP section
 call :openzone_edit_ini_append_mp_section "%_CFG_FILE_TEMP%"
-
 exit /B
 
 :openzone_edit_ini_append_mp_section [file]
@@ -705,19 +789,18 @@ rem Append the MP section to the file specified
 exit /B
 
 :openzone_edit_ini_parse_line [line]
-rem Read the config file, line by line
+rem Read the current line in the config file
 set "_LINE=%~1"
 
-rem Parse until we reach the multiplayer section
+rem Check if we reached the MP section
 if "!_LINE:~0,1!"=="[" if "!_LINE:~-1!"=="]" (
 	for /F "delims=[]" %%S in ("!_LINE!") do (
 		if /I "%%S"=="multiplayer" set "_IN_SECTION=1"
 	)
 )
 
-rem Write the current line to the temp file until we reach the MP section
+rem Write the current line to the temp file if it was before the MP section
 if !_IN_SECTION!==0 echo:!_LINE!>> "%_CFG_FILE_TEMP%"
-
 exit /B
 
 :powershell_check

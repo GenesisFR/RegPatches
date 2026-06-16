@@ -391,6 +391,9 @@ echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will
 goto end
 
 :junction_save
+echo %cInfo%[~] Enabling Steam Cloud for Legends of Aranna...%cReset%
+ping -n 2 127.0.0.1 > nul
+echo:
 echo %cInfo%[i] This will redirect the Save directory for Legends of Aranna to the one used by Dungeon Siege.
 echo If you had saves for Legends of Aranna, you'll have to copy them manually.%cReset%
 echo %cMenu%[!] WARNING: this is an experimental feature. All saves will be displayed in-game and those not created by Dungeon Siege can't be loaded in Legends of Aranna (and vice versa)! %cReset%
@@ -398,9 +401,6 @@ echo:
 ping -n 2 127.0.0.1 > nul
 pause
 echo:
-
-echo %cInfo%[~] Enabling Steam Cloud for Legends of Aranna...%cReset%
-ping -n 2 127.0.0.1 > nul
 
 rem Whitelist the command prompt in Controlled Folder Access (otherwise the MKLINK and JUNCTION commands won't work)
 call :cfa_whitelist_cmd
@@ -412,9 +412,10 @@ if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate My Document
 
 set "_DOCS_DS=%_MY_DOCUMENTS%\Dungeon Siege"
 set "_DOCS_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA"
-set "_SAVE_DS=%_MY_DOCUMENTS%\Dungeon Siege\Save"
-set "_SAVE_LOA=%_MY_DOCUMENTS%\Dungeon Siege LOA\Save"
+set "_SAVE_DS=%_DOCS_DS%\Save"
+set "_SAVE_LOA=%_DOCS_LOA%\Save"
 
+rem Create the necessary directories if they're missing
 if not exist "%_SAVE_DS%" md "%_SAVE_DS%"
 if not exist "%_DOCS_LOA%" md "%_DOCS_LOA%"
 
@@ -425,10 +426,12 @@ if %_WINVER% GTR 52 (
 
 	rem Failed to remove the directory junction because it's a normal directory, so we rename it instead
 	if exist "%_SAVE_LOA%" (
+		if exist "%_SAVE_LOA%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_LOA%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
 		ren "%_SAVE_LOA%" Save_backup
 		echo %cInfo%[i] The directory "%_SAVE_LOA%" was renamed as "%_SAVE_LOA%_backup". Don't forget to move your saves to "%_SAVE_DS%"! %cReset%
 		echo:
-		explorer "%_DOCS_LOA%\Save_backup"
 	)
 
 	mklink /J "%_SAVE_LOA%" "%_SAVE_DS%" > nul 2>&1
@@ -441,21 +444,24 @@ rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinter
 
 	rem Failed to remove the directory junction because it's a normal directory, so we rename it instead
 	if exist "%_SAVE_LOA%" (
+		if exist "%_SAVE_LOA%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_LOA%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
 		ren "%_SAVE_LOA%" Save_backup
 		echo %cInfo%[i] The directory "%_SAVE_LOA%" was renamed as "%_SAVE_LOA%_backup". Don't forget to move your saves to "%_SAVE_DS%"! %cReset%
 		echo:
-		explorer "%_DOCS_LOA%\Save_backup"
 	)
 
 	junction "%_SAVE_LOA%" "%_SAVE_DS%" > nul 2>&1
 )
 
 if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
-
-set _STEAM_LAUNCH_OPTION="%_INSTALL_LOCATION%\DSLOA.exe" %%command%%
+if defined _SAVE_BACKED_UP explorer "%_SAVE_LOA%_backup"
 
 echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
 ping -n 2 127.0.0.1 > nul
+
+set _STEAM_LAUNCH_OPTION="%_INSTALL_LOCATION%\DSLOA.exe" %%command%%
 echo %cInfo%[i] You'll have to either rename DSLOA.exe to DungeonSiege.exe in your installation directory or put the following in your Steam launch options: %cMenu%%_STEAM_LAUNCH_OPTION%%cReset%
 ping -n 2 127.0.0.1 > nul
 

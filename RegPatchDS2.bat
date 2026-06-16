@@ -278,6 +278,7 @@ ping -n 2 127.0.0.1 > nul
 for %%G in (DS2VideoConfig.exe,DungeonSiege2.exe,DungeonSiege2Mod.exe) do call :cfa_whitelist %%G
 
 echo %cSuccess%[+] Game executable^(s^) successfully whitelisted.%cReset%
+
 goto end
 
 :cleanup
@@ -320,14 +321,12 @@ ping -n 2 127.0.0.1 > nul
 	echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
 ) > %_REG_FILE%
 
-if exist %_REG_FILE% (
-	echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
-	echo:
-	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[i] They can be imported from the "%_REG_FILE%" file in the current directory.%cReset%
-) else (
-	echo %cError%[-] ERROR: failed to export registry entries.%cReset%
-)
+if not exist %_REG_FILE% echo %cError%[-] ERROR: failed to export registry entries.%cReset% & goto end
+
+echo %cSuccess%[+] SUCCESS: registry entries exported.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+echo %cInfo%[i] They can be imported from the "%_REG_FILE%" file in the current directory.%cReset%
 
 goto end
 
@@ -350,16 +349,14 @@ rem Windows 2000/XP/Server 2003
 	junction "%_PROGRAM_FILES%\Dungeon Siege 2" "%_INSTALL_LOCATION%" > nul 2>&1
 )
 
-if %ERRORLEVEL%==0 (
-	echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-	echo:
-	ping -n 2 127.0.0.1 > nul
-	echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 2" to add the game to GameRanger.%cReset%
-	echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
-	echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
-) else (
-	echo %cError%[-] ERROR: failed to create the directory junction.%cReset%
-)
+if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
+
+echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 2" to add the game to GameRanger.%cReset%
+echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
+echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
 
 goto end
 
@@ -623,6 +620,7 @@ call :display_header
 echo %cInfo%Usage:%cReset%
 echo:
 echo %cInfo%%~0 -c X ^(where X is a number between 1 and %_LAST_OPTION_INDEX%^)%cReset%
+
 goto end
 
 :end

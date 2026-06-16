@@ -65,7 +65,7 @@ set "cDim=%ESC%[90m"
 
 :parse_args
 rem Check and validate arguments
-set "_LAST_OPTION_INDEX=8"
+set "_LAST_OPTION_INDEX=9"
 if defined _LINUX set "_LAST_OPTION_INDEX=6"
 
 if "%~1"=="" goto admin_check
@@ -99,7 +99,7 @@ if not %ERRORLEVEL%==0 (
 	echo UAC.ShellExecute """%~f0""", "%*", "", "runas", 1 >> "%TEMP%\ElevateMe.vbs"
 
 	"%TEMP%\ElevateMe.vbs"
-	del "%TEMP%\ElevateMe.vbs"
+	del "%TEMP%\ElevateMe.vbs" > nul 2>&1
 
 	exit /B
 )
@@ -123,6 +123,7 @@ set "_MS_DS2_EXPORT=HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Microsoft 
 set "_REG_ARG=/reg:32"
 set "_REG_KEY_CFA=HKLM\Software\Microsoft\Windows Defender\Windows Defender Exploit Guard\Controlled Folder Access"
 set "_REG_KEY_GOG=HKLM\SOFTWARE\Wow6432Node\GOG.com\Games\1837106902"
+set "_REG_KEY_SF=HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 set "_REG_KEY_STEAM=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 39200"
 
 rem Other important variables
@@ -144,6 +145,10 @@ if %PROCESSOR_ARCHITECTURE%==x86 (
 		set "_REG_KEY_GOG=HKLM\SOFTWARE\GOG.com\Games\1837106902"
 	)
 )
+
+rem https://serverfault.com/a/701644
+rem Get the path to My Documents
+for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_SF%" /V "Personal" 2^>nul') do set "_MY_DOCUMENTS=%%H"
 
 :exe_check
 echo %cInfo%[~] Current directory:%cReset% %CD%
@@ -167,9 +172,10 @@ if exist DungeonSiege2.exe (
 
 rem Check for the game executables in the Steam installation directory, then GOG if not found
 call :install_detection Steam "%_REG_KEY_STEAM%" InstallLocation
-if %ERRORLEVEL%==1 call :install_detection GOG "%_REG_KEY_GOG%" path
+if %ERRORLEVEL%==1 ping -n 2 127.0.0.1 > nul & call :install_detection GOG "%_REG_KEY_GOG%" path
 
 if %ERRORLEVEL%==1 (
+	ping -n 2 127.0.0.1 > nul
 	echo %cError%[-] ERROR: could not locate the game installation directory.%cReset%
 	ping -n 2 127.0.0.1 > nul
 	echo %cMenu%[i] Please place this script inside your Dungeon Siege 2 installation directory.%cReset%
@@ -177,8 +183,8 @@ if %ERRORLEVEL%==1 (
 )
 
 :menu
-rem Double the trailing backslash of the installation directory as it's interpreted as an escape character by the REG commands, which causes them
-rem to not work correctly when the game is installed at the root of a drive
+rem Double the trailing backslash of the installation directory as it's interpreted as an escape character by the REG commands, which causes them to not work
+rem correctly when the game is installed at the root of a drive
 set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%"
 if "%_INSTALL_LOCATION:~-1%"=="\" set "_INSTALL_LOCATION_DOUBLE_TRAILING_BACKSLASH=%_INSTALL_LOCATION%\"
 
@@ -201,12 +207,13 @@ rem Hide Windows-specific options on Linux
 if not defined _LINUX (
 	echo %cTitle%[ MULTIPLAYER ^& FIXES ]%cReset%
 	echo %cMenu%[6]%cReset% Create a directory junction in Program Files ^(useful for GameRanger^)
-	echo %cMenu%[7]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
+	echo %cMenu%[7]%cReset% Enable Steam Cloud for Broken World
+	echo %cMenu%[8]%cReset% Whitelist the game executable^(s^) in Controlled Folder Access ^(useful on Windows 10/11^)
 	echo:
 	echo %cTitle%[ OTHER ]%cReset%
-	echo %cMenu%[8]%cReset% Check for updates
+	echo %cMenu%[9]%cReset% Check for updates
 	echo:
-	echo %cError%[9] Exit%cReset%
+	echo %cError%[0] Exit%cReset%
 ) else (
 	echo:
 	echo %cTitle%[ OTHER ]%cReset%
@@ -220,7 +227,7 @@ echo %cMenu%[Note]%cReset% If you're not sure which option to select, just press
 echo %cDim%--------------------------------------------------------------------------------%cReset%
 
 rem List of valid choices
-set "_CHOICES=123456789"
+set "_CHOICES=1234567890"
 if defined _LINUX set "_CHOICES=1234567"
 
 echo %cTitle%Please make a selection [1-%_CHOICES:~-1%]:%cReset%
@@ -250,10 +257,11 @@ if defined _LINUX (
 	if %_CHOICE%==7 exit /B
 )
 
-if %_CHOICE%==6 goto junction
-if %_CHOICE%==7 goto cfa_whitelist_all
-if %_CHOICE%==8 goto update
-if %_CHOICE%==9 exit /B
+if %_CHOICE%==6 goto junction_game
+if %_CHOICE%==7 goto junction_save
+if %_CHOICE%==8 goto cfa_whitelist_all
+if %_CHOICE%==9 goto update
+if %_CHOICE%==10 exit /B
 
 rem This is only here to help with development since we should never reach this in practice
 echo %cError%[-] ERROR: invalid choice detected.%cReset% & goto end
@@ -263,6 +271,10 @@ rem ======================================== CHOICE LABELS =====================
 rem ===============================================================================================
 
 :cfa_whitelist_all
+echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
+echo %cDim%--------------------------------------------------------------------------------%cReset%
+ping -n 2 127.0.0.1 > nul
+
 if %_WINVER% LSS 100 echo %cInfo%[i] You're not on Windows 10 or newer.%cReset% & goto end
 
 call :cfa_check
@@ -270,10 +282,6 @@ if %_IS_CFA_ENABLED%==0 echo %cInfo%[i] Controlled Folder Access is disabled.%cR
 
 call :powershell_check
 if not defined _PWSH_CMD echo %cError%[-] ERROR: Powershell is not installed.%cReset% & goto end
-
-echo %cInfo%[~] Whitelisting the game executable^(s^) in Controlled Folder Access...%cReset%
-echo %cDim%--------------------------------------------------------------------------------%cReset%
-ping -n 2 127.0.0.1 > nul
 
 for %%G in (DS2VideoConfig.exe,DungeonSiege2.exe,DungeonSiege2Mod.exe) do call :cfa_whitelist %%G
 
@@ -286,9 +294,9 @@ echo %cInfo%[~] Removing registry entries for Dungeon Siege 2 and Broken World..
 ping -n 2 127.0.0.1 > nul
 
 (
-	reg delete "%_MS_DS2%" /f %_REG_ARG%
 	reg delete "%_2K_BW%" /f %_REG_ARG%
 	reg delete "%_GPG_BW%" /f %_REG_ARG%
+	reg delete "%_MS_DS2%" /f %_REG_ARG%
 ) > nul 2>&1
 
 if %ERRORLEVEL%==1 echo %cError%[-] ERROR: failed to remove registry entries.%cReset% & goto end
@@ -297,20 +305,15 @@ echo %cSuccess%[+] SUCCESS: registry entries removed.%cReset%
 goto end
 
 :export
+echo %cInfo%[~] Exporting registry entries for Dungeon Siege 2 and Broken World...%cReset%
+ping -n 2 127.0.0.1 > nul
+
 rem https://alt.msdos.batch.narkive.com/LNB84uUc/replace-all-backslashes-in-a-string-with-double-backslash
 rem Double backslashes in the install directory path
 set "_INSTALL_LOCATION_DOUBLE_BACKSLASH=%_INSTALL_LOCATION:\=\\%"
 
-echo %cInfo%[~] Exporting registry entries for Dungeon Siege 2 and Broken World...%cReset%
-ping -n 2 127.0.0.1 > nul
-
 (
 	echo REGEDIT4
-	echo:
-	echo [%_MS_DS2_EXPORT%]
-	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
-	echo "PID"="0000-0000-0000-0000"
 	echo:
 	echo [%_2K_BW_EXPORT%]
 	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
@@ -319,6 +322,11 @@ ping -n 2 127.0.0.1 > nul
 	echo:
 	echo [%_GPG_BW_EXPORT%]
 	echo "InstallLocation"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo:
+	echo [%_MS_DS2_EXPORT%]
+	echo "AppPath"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "InstallationDirectory"="%_INSTALL_LOCATION_DOUBLE_BACKSLASH%"
+	echo "PID"="0000-0000-0000-0000"
 ) > %_REG_FILE%
 
 if not exist %_REG_FILE% echo %cError%[-] ERROR: failed to export registry entries.%cReset% & goto end
@@ -330,33 +338,157 @@ echo %cInfo%[i] They can be imported from the "%_REG_FILE%" file in the current 
 
 goto end
 
-:junction
+:junction_game
+echo %cInfo%[~] Creating a directory junction for Dungeon Siege 2...%cReset%
+ping -n 2 127.0.0.1 > nul
+
 rem https://stackoverflow.com/a/8071683
 rem Get the install directory name
 rem for %%G in ("%_INSTALL_LOCATION%") do set "_INSTALL_DIRECTORY_NAME=%%~nxG"
 
-echo %cInfo%[~] Creating a directory junction for Dungeon Siege 2...%cReset%
-ping -n 2 127.0.0.1 > nul
-
 rem Windows Vista or later
 if %_WINVER% GTR 52 (
-	if exist "%_PROGRAM_FILES%\Dungeon Siege 2" rmdir /Q "%_PROGRAM_FILES%\Dungeon Siege 2" > nul
+	rem Remove the directory junction
+	rd /Q "%_PROGRAM_FILES%\Dungeon Siege 2" > nul 2>&1
+
 	mklink /J "%_PROGRAM_FILES%\Dungeon Siege 2" "%_INSTALL_LOCATION%" > nul 2>&1
-rem Windows 2000/XP/Server 2003
+rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
 ) else (
-	rem https://learn.microsoft.com/en-us/sysinternals/downloads/junction
+	if not exist junction.exe echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+
+	rem Remove the directory junction
 	junction -d "%_PROGRAM_FILES%\Dungeon Siege 2" > nul 2>&1
+
 	junction "%_PROGRAM_FILES%\Dungeon Siege 2" "%_INSTALL_LOCATION%" > nul 2>&1
 )
 
 if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
 
 echo %cSuccess%[+] SUCCESS: directory junction created.%cReset%
-echo:
 ping -n 2 127.0.0.1 > nul
 echo %cInfo%[i] You can now select the game executable from "%_PROGRAM_FILES%\Dungeon Siege 2" to add the game to GameRanger.%cReset%
 echo %cInfo%[i] It can safely be renamed or deleted.%cReset%
-echo %cMenu%[!] WARNING: do NOT move the directory junction somewhere else as it will also move your entire game directory! %cReset%
+echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will also move your entire game directory! %cReset%
+
+goto end
+
+:junction_save
+echo %cInfo%[~] Enabling Steam Cloud for Broken World...%cReset%
+ping -n 2 127.0.0.1 > nul
+echo %cInfo%[i] This will redirect the Save directory for Broken World to the one used by Dungeon Siege 2.
+echo If you had saves for Broken World, you'll have to copy them manually.%cReset%
+echo %cMenu%[!] WARNING: this is an experimental feature. All saves will be displayed in-game and those not created by Dungeon Siege 2 can't be loaded in Broken World (and vice versa)! %cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
+pause
+echo:
+
+rem Whitelist the command prompt in Controlled Folder Access (otherwise the MKLINK and JUNCTION commands won't work)
+call :cfa_whitelist_cmd
+if %ERRORLEVEL%==1 goto end
+rem Restart the reg patch if necessary (using the same option)
+if %ERRORLEVEL%==2 call :end & cls & cmd /C "%~f0" -c %_CHOICE% & exit /B
+
+if not defined _MY_DOCUMENTS echo %cError%[-] ERROR: couldn't locate My Documents.%cReset% & goto end
+
+set "_SAVE_DS2=%_MY_DOCUMENTS%\My Games\Dungeon Siege 2\Save"
+set "_SAVE_BW=%_MY_DOCUMENTS%\My Games\Dungeon Siege 2 Broken World\Save"
+set "_SAVE_DS2_MP=%_SAVE_DS2%\MultiPlayer"
+set "_SAVE_DS2_SP=%_SAVE_DS2%\SinglePlayer"
+set "_SAVE_BW_MP=%_SAVE_BW%\MultiPlayer"
+set "_SAVE_BW_SP=%_SAVE_BW%\SinglePlayer"
+
+rem Create the necessary directories if they're missing
+if not exist "%_SAVE_DS2_MP%" md "%_SAVE_DS2_MP%"
+if not exist "%_SAVE_DS2_SP%" md "%_SAVE_DS2_SP%"
+if not exist "%_SAVE_BW%" md "%_SAVE_BW%"
+
+rem Windows Vista or later
+if %_WINVER% GTR 52 (
+	rem Remove the MP directory junction
+	rd /Q "%_SAVE_BW_MP%" > nul 2>&1
+
+	rem Failed to remove the MP directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_BW_MP%" (
+		if exist "%_SAVE_BW_MP%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_BW_MP%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
+		ren "%_SAVE_BW_MP%" MultiPlayer_backup
+		echo %cInfo%[i] The directory "%_SAVE_BW_MP%" was renamed as "%_SAVE_BW_MP%_backup". Don't forget to move your saves to "%_SAVE_DS2_MP%"! %cReset%
+		echo:
+	)
+
+	mklink /J "%_SAVE_BW_MP%" "%_SAVE_DS2_MP%" > nul 2>&1
+
+	rem Remove the SP directory junction
+	rd /Q "%_SAVE_BW_SP%" > nul 2>&1
+
+	rem Failed to remove the SP directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_BW_SP%" (
+		if exist "%_SAVE_BW_SP%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_BW_SP%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
+		ren "%_SAVE_BW_SP%" SinglePlayer_backup
+		echo %cInfo%[i] The directory "%_SAVE_BW_SP%" was renamed as "%_SAVE_BW_SP%_backup". Don't forget to move your saves to "%_SAVE_DS2_SP%"! %cReset%
+		echo:
+	)
+
+	mklink /J "%_SAVE_BW_SP%" "%_SAVE_DS2_SP%" > nul 2>&1
+rem Windows 2000/XP/Server 2003 (uses https://learn.microsoft.com/en-us/sysinternals/downloads/junction)
+) else (
+	if not exist junction.exe echo %cError%[-] ERROR: junction.exe not found in the current directory.%cReset% & goto end
+
+	rem Remove the MP directory junction
+	junction -d "%_SAVE_BW_MP%" > nul 2>&1
+
+	rem Failed to remove the MP directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_BW_MP%" (
+		if exist "%_SAVE_BW_MP%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_BW_MP%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
+		ren "%_SAVE_BW_MP%" MultiPlayer_backup
+		echo %cInfo%[i] The directory "%_SAVE_BW_MP%" was renamed as "%_SAVE_BW_MP%_backup". Don't forget to move your saves to "%_SAVE_DS2_MP%"! %cReset%
+		echo:
+	)
+
+	junction "%_SAVE_BW_MP%" "%_SAVE_DS2_MP%" > nul 2>&1
+
+	rem Remove the SP directory junction
+	junction -d "%_SAVE_BW_SP%" > nul 2>&1
+
+	rem Failed to remove the SP directory junction because it's a normal directory, so we rename it instead
+	if exist "%_SAVE_BW_SP%" (
+		if exist "%_SAVE_BW_SP%_backup" echo %cError%[-] ERROR: a backup already exists.%cReset% & explorer "%_SAVE_BW_SP%_backup" & goto end
+
+		set "_SAVE_BACKED_UP=1"
+		ren "%_SAVE_BW_SP%" SinglePlayer_backup
+		echo %cInfo%[i] The directory "%_SAVE_BW_SP%" was renamed as "%_SAVE_BW_SP%_backup". Don't forget to move your saves to "%_SAVE_DS2_SP%"! %cReset%
+		echo:
+	)
+
+	junction "%_SAVE_BW_SP%" "%_SAVE_DS2_SP%" > nul 2>&1
+)
+
+if not %ERRORLEVEL%==0 echo %cError%[-] ERROR: failed to create the directory junction.%cReset% & goto end
+if defined _SAVE_BACKED_UP explorer "%_SAVE_BW%"
+
+echo %cSuccess%[+] SUCCESS: directory junctions created.%cReset%
+ping -n 2 127.0.0.1 > nul
+
+rem set _STEAM_LAUNCH_OPTION="%_INSTALL_LOCATION%\DungeonSiege2.exe" %%command%%
+
+rem echo %cInfo%[i] You'll have to put the following in your Steam launch options: %cMenu%%_STEAM_LAUNCH_OPTION%%cReset%
+rem ping -n 2 127.0.0.1 > nul
+
+rem rem Copy the launch option to clipboard
+rem clip > nul 2>&1
+rem if not %ERRORLEVEL%==9009 (
+	rem echo %_STEAM_LAUNCH_OPTION%| clip > nul 2>&1
+	rem echo %cInfo%[i] The launch options have been copied to your clipboard.%cReset%
+	rem echo:
+rem )
+
+echo %cMenu%[!] WARNING: do NOT move the directory junction elsewhere as it will also move the entire Save directory for Legends of Aranna! %cReset%
 
 goto end
 
@@ -379,7 +511,7 @@ if not exist empty (
 	setlocal DisableDelayedExpansion
 )
 
-del empty
+del empty > nul 2>&1
 echo %cInfo%[~] Downloading the version file from GitHub...%cReset%
 ping -n 2 127.0.0.1 > nul
 
@@ -400,7 +532,7 @@ ping -n 2 127.0.0.1 > nul
 
 rem Store the file content into a variable
 for /F "usebackq" %%G in ("%_FILE%") do set _REPO_VERSION=%%G
-del "%_FILE%"
+del "%_FILE%" > nul 2>&1
 
 rem Compare version numbers (without dots)
 if %_VERSION:.=% GEQ %_REPO_VERSION:.=% echo %cInfo%[i] You already have the latest version.%cReset% & goto end
@@ -444,13 +576,13 @@ rem ========================================= SUBROUTINES ======================
 rem ===============================================================================================
 
 :cfa_check
+rem Avoids a problem on Linux since error messages are sent to STDOUT (1) instead of STDERR (2)
+if defined _LINUX set "_IS_CFA_ENABLED=0" & exit /B
+
 rem Check in the registry if Controlled Folder Access is enabled
 for /F "tokens=2*" %%G in ('reg query "%_REG_KEY_CFA%" /V "EnableControlledFolderAccess" 2^>nul') do set "_IS_CFA_ENABLED=%%H"
 
 if not defined _IS_CFA_ENABLED set "_IS_CFA_ENABLED=0" & exit /B
-
-rem Avoids a problem on Linux since error messages are sent to STDOUT (1) instead of STDERR (2)
-if defined _LINUX set "_IS_CFA_ENABLED=0" & exit /B
 
 rem The value in the registry is hexadecimal so we need to convert it to decimal
 set /A "_IS_CFA_ENABLED=%_IS_CFA_ENABLED%"
@@ -599,6 +731,8 @@ if exist "%_INSTALL_LOCATION%\DungeonSiege2.exe" (
 
 :open_repo
 echo %cInfo%[i] The repository will now be opened in your web browser.%cReset%
+echo:
+ping -n 2 127.0.0.1 > nul
 pause
 start "" https://github.com/GenesisFR/RegPatches
 exit /B
